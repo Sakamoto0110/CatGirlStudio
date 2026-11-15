@@ -22,6 +22,7 @@ report = ctx.eval(r"""
   const E = window.PromptEngine.create(window.CATALOG, window.PREFABS);
   const out = { prefabs: [], problems: [], lengths: [] };
   const ids = new Set();
+  const glitch = text => text.split("\n").some(l => /\s[.,]|\.\.|,,|, ,| {2}|\b(?:and|with)[.,]|\uE000/.test(l));
   const base = id => {
     const s = { prefabId: id, values: E.defaultValues(), custom: {} };
     for (const [k, v] of Object.entries(E.findPrefab(id).defaults || {})) {
@@ -36,19 +37,50 @@ report = ctx.eval(r"""
     if (!window.CATEGORIES.includes(p.category)) out.problems.push(`prefab ${p.id}: unknown category ${p.category}`);
     const r = E.build(base(p.id));
     if (/\{\{/.test(r.text)) out.problems.push(`prefab ${p.id}: unresolved placeholder in prompt`);
-    if (r.text.split("\n").some(l => /\s[.,]|\.\.|,,| {2}/.test(l))) out.problems.push(`prefab ${p.id}: spacing/punctuation glitch`);
+    if (glitch(r.text)) out.problems.push(`prefab ${p.id}: spacing/punctuation glitch`);
     out.lengths.push(r.text.length);
     out.prefabs.push([p.id, r.used.size]);
   }
-  // every option of every variable, inside one prefab, must resolve cleanly
+  // every option of every variable must resolve cleanly, tested in a selection that
+  // actually reaches the variable: some fields only appear under another choice
+  // (the piece fields under a "build" outfit, the shoes color under a shoe)
+  const mentions = (text, name) =>
+    [...String(text).matchAll(/\{\{(?:list:)?([\w,]+)\}\}/g)].some(m => m[1].split(",").includes(name));
+  const contextFor = (name, seen = new Set()) => {
+    const start = base("patinha");
+    if (E.build(start).used.has(name)) return start;
+    if (seen.has(name)) return null;
+    seen.add(name);
+    for (const [parent, pdef] of Object.entries(E.VARS)) {
+      for (const o of pdef.options) {
+        if (!mentions(o.en, name)) continue;
+        const c = contextFor(parent, seen);
+        if (!c) continue;
+        const s = JSON.parse(JSON.stringify(c)); s.values[parent] = o.id;
+        if (E.build(s).used.has(name)) return s;
+      }
+    }
+    return null;
+  };
   for (const [name, def] of Object.entries(E.VARS)) {
+    const ctx = contextFor(name);
+    if (!ctx) out.problems.push(`var ${name}: no selection reaches it, so it never shows up`);
     const optIds = new Set();
     for (const o of def.options) {
       if (optIds.has(o.id)) out.problems.push(`var ${name}: duplicate option id ${o.id}`);
       optIds.add(o.id);
-      const s = base("patinha"); s.values[name] = o.id;
+      const s = JSON.parse(JSON.stringify(ctx || base("patinha"))); s.values[name] = o.id;
       const r = E.build(s);
       if (/\{\{/.test(r.text)) out.problems.push(`var ${name}=${o.id}: unresolved placeholder`);
+      if (glitch(r.text)) out.problems.push(`var ${name}=${o.id}: spacing/punctuation glitch`);
+      for (const m of o.en.matchAll(/\{\{list:([\w,]+)\}\}/g)) {
+        for (const item of m[1].split(",")) {
+          if (!E.VARS[item]) { out.problems.push(`var ${name}=${o.id}: list names unknown variable ${item}`); continue; }
+          for (const io of E.VARS[item].options) {
+            if (io.en.includes(",")) out.problems.push(`var ${item}=${io.id}: comma inside a list item`);
+          }
+        }
+      }
     }
     if (!def.options.some(o => o.id === def.default)) out.problems.push(`var ${name}: default ${def.default} is not an option`);
   }
@@ -62,6 +94,12 @@ report = ctx.eval(r"""
   out.custom = E.build(c).text.split("\n").find(l => l.startsWith("An adult"));
   out.sample = E.build(base("patinha")).text;
   out.sampleWallpaper = E.build(base("wp-cafe")).text;
+  const outfitLine = s => E.build(s).text.split("\n").find(l => l.startsWith("An adult"));
+  const b1 = base("patinha");
+  Object.assign(b1.values, { outfit: "build", topPattern: "stripes", outerwear: "cardigan", legwear: "none", shoes: "loafers" });
+  const b2 = base("patinha");
+  Object.assign(b2.values, { outfit: "builddress", dress: "pinafore", topColor: "navy", topPattern: "gingham" });
+  out.sampleBuild = [outfitLine(b1), outfitLine(b2)];
   return JSON.stringify(out);
 })()
 """)
@@ -77,3 +115,4 @@ print(r["edit"]["text"])
 print("\ncustom:", r["custom"])
 print("\n=== sample (patinha) ===\n" + r["sample"])
 print("\n=== sample (wp-cafe) ===\n" + r["sampleWallpaper"])
+print("\n=== built outfits ===\n" + "\n".join(r["sampleBuild"]))

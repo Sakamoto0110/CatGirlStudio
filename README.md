@@ -36,6 +36,14 @@ partir desta pasta. A página é `page.html` com `app.js`, `engine.js` e `data/`
 A tela mostra só as variáveis que o prompt realmente usa. Uma roupa sem meias,
 por exemplo, esconde o campo "Meias".
 
+`{{list:a,b,c}}` expande cada variável, descarta as vazias (opção "nenhum") e
+junta o resto como "x, y and z". É assim que funcionam as duas roupas "Montar…":
+elas abrem os campos de peça (parte de cima, parte de baixo ou vestido, o que vai
+por cima, meias e calçado, cada um com cor e, nas peças principais, estampa). O
+texto de uma peça não pode ter vírgula, senão a lista se embaralha. Uma opção com
+texto vazio também apaga a palavra que ficaria pendurada antes dela ("shorts and
+{{legwear}}" vira "shorts").
+
 ### Regras fixas da casa
 
 Estão em `CATALOG.blocks` e entram em todo prompt. Vêm dos testes com o GPT:

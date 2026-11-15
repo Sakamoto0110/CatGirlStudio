@@ -11,6 +11,13 @@
  *                             use {{mainColor}}, {{accentColor}} and {{legwear}})
  * The whole prompt starts from CATALOG.blocks.prompt.
  *
+ * {{list:a,b,c}} expands each name the same way, drops the ones that come out empty
+ * (a "none" option) and joins the rest as "x, y and z". Text that goes into a list
+ * should have no commas of its own, or the list stops reading as a list.
+ *
+ * An option with en "" says nothing. A joining word left before it ("shorts and
+ * {{legwear}}") is removed when that happens.
+ *
  * Only the variables a prompt actually reaches are shown in the UI, so an outfit
  * without socks will not show the "legwear" field.
  *
@@ -177,6 +184,9 @@ window.CATALOG = {
     outfit: {
       label: "Roupa", name: "outfit", group: "Roupa", default: "cardigan",
       options: [
+        // the two "build" options open the piece fields below instead of a ready outfit
+        { id: "build", pt: "Montar: parte de cima + parte de baixo", en: "{{list:top,bottom,outerwear,legwear,shoes}}" },
+        { id: "builddress", pt: "Montar: vestido", en: "{{list:dress,outerwear,legwear,shoes}}" },
         { id: "cardigan", pt: "Cardigã oversized + camiseta", en: "an oversized, cozy {{mainColor}} cardigan worn properly on both shoulders, with long sleeves covering half of her hands, over a loose {{accentColor}} t-shirt with a high neckline, polka-dot shorts and {{legwear}}" },
         { id: "hoodie", pt: "Moletom oversized", en: "an oversized {{mainColor}} hoodie with cat-ear details on the hood, sleeves covering half of her hands, {{accentColor}} shorts and {{legwear}}" },
         { id: "wintercoat", pt: "Casaco de inverno + cachecol", en: "a long {{mainColor}} wool coat with gold buttons over a dark dress with a subtle floral pattern, a long chunky {{accentColor}} knitted scarf, and {{legwear}}" },
@@ -195,6 +205,134 @@ window.CATALOG = {
       ]
     },
 
+    /* Pieces, used by the two "build" outfits. No commas inside: they go into a list.
+       Patterns are adjectives that sit between the color and the garment. */
+    dress: {
+      label: "Vestido", name: "dress", group: "Roupa", default: "sweaterdress",
+      options: [
+        { id: "sweaterdress", pt: "Suéter-vestido oversized", en: "an oversized {{topColor}} {{topPattern}} knit sweater dress worn properly on both shoulders with long sleeves covering her hands" },
+        { id: "smock", pt: "Vestido bata soltinho", en: "a loose {{topColor}} {{topPattern}} smock dress with long sleeves and a rounded collar" },
+        { id: "pinafore", pt: "Jardineira (pinafore) sobre blusa", en: "a {{topColor}} {{topPattern}} pinafore dress over a white long-sleeved blouse" },
+        { id: "shirtdress", pt: "Chemise com cinto", en: "a {{topColor}} {{topPattern}} button-up shirt dress with long sleeves and a soft belt" },
+        { id: "summer", pt: "Vestido de verão com mangas bufantes", en: "a light {{topColor}} {{topPattern}} summer dress with a high neckline and short puffed sleeves" },
+        { id: "lolita", pt: "Lolita suave", en: "a modest lolita-style {{topColor}} {{topPattern}} long-sleeved dress with lace trim and a high collar" },
+        { id: "nightgown", pt: "Camisola longa de dormir", en: "a long loose {{topColor}} {{topPattern}} nightgown with long sleeves and a rounded collar" },
+        { id: "knitlong", pt: "Vestido longo de tricô", en: "a long {{topColor}} {{topPattern}} knit dress with a high neckline and long sleeves" }
+      ]
+    },
+
+    top: {
+      label: "Parte de cima", name: "top", group: "Roupa", default: "oversizedsweater",
+      options: [
+        { id: "oversizedsweater", pt: "Suéter oversized (mangas nas mãos)", en: "an oversized {{topColor}} {{topPattern}} knit sweater worn properly on both shoulders with long sleeves covering half of her hands" },
+        { id: "sweater", pt: "Suéter de tricô", en: "a soft {{topColor}} {{topPattern}} knit sweater with long sleeves" },
+        { id: "turtleneck", pt: "Gola alta", en: "a soft {{topColor}} {{topPattern}} turtleneck sweater" },
+        { id: "hoodie", pt: "Moletom com orelhinhas no capuz", en: "an oversized {{topColor}} {{topPattern}} hoodie with cat-ear details on the hood and sleeves covering half of her hands" },
+        { id: "tshirt", pt: "Camiseta larga", en: "a loose {{topColor}} {{topPattern}} t-shirt with a high crew neckline" },
+        { id: "blouse", pt: "Blusa com laço na gola", en: "a {{topColor}} {{topPattern}} blouse with long puffed sleeves and a soft bow at the high collar" },
+        { id: "shirt", pt: "Camisa de botão fechada", en: "a {{topColor}} {{topPattern}} button-up shirt buttoned all the way up with long sleeves" },
+        { id: "sailor", pt: "Blusa marinheiro", en: "a {{topColor}} {{topPattern}} sailor-style blouse with a wide collar and long sleeves" },
+        { id: "vest", pt: "Colete de tricô sobre camisa", en: "a {{topColor}} {{topPattern}} knit vest over a white long-sleeved collared shirt" },
+        { id: "pajamatop", pt: "Blusa de pijama", en: "a loose {{topColor}} {{topPattern}} pajama top with long sleeves and a rounded collar" }
+      ]
+    },
+
+    topColor: {
+      label: "Cor da peça principal", name: "main piece color", group: "Roupa", default: "cream",
+      options: null // filled from COLORS below
+    },
+
+    topPattern: {
+      label: "Estampa da peça principal", name: "main piece pattern", group: "Roupa", default: "none",
+      options: null // filled from PATTERNS below
+    },
+
+    bottom: {
+      label: "Parte de baixo", name: "bottom", group: "Roupa", default: "pleated",
+      options: [
+        { id: "pleated", pt: "Saia plissada até o joelho", en: "a knee-length {{bottomColor}} {{bottomPattern}} pleated skirt" },
+        { id: "pleatedstripe", pt: "Saia plissada com listras brancas na barra", en: "a knee-length {{bottomColor}} {{bottomPattern}} pleated skirt with two thin white stripes near the hem" },
+        { id: "aline", pt: "Saia evasê até o joelho", en: "a knee-length {{bottomColor}} {{bottomPattern}} A-line skirt" },
+        { id: "suspender", pt: "Saia com suspensório", en: "a knee-length {{bottomColor}} {{bottomPattern}} skirt with thin suspenders" },
+        { id: "longskirt", pt: "Saia longa", en: "a long flowing {{bottomColor}} {{bottomPattern}} skirt" },
+        { id: "shorts", pt: "Short largo", en: "loose {{bottomColor}} {{bottomPattern}} shorts" },
+        { id: "trousers", pt: "Calça reta", en: "straight-leg {{bottomColor}} {{bottomPattern}} trousers" },
+        { id: "wideleg", pt: "Pantalona", en: "wide-leg {{bottomColor}} {{bottomPattern}} trousers" },
+        { id: "cargo", pt: "Calça cargo", en: "loose {{bottomColor}} cargo pants" },
+        { id: "sweatpants", pt: "Calça de moletom", en: "soft {{bottomColor}} sweatpants" },
+        { id: "pajamapants", pt: "Calça de pijama", en: "loose {{bottomColor}} {{bottomPattern}} pajama pants" }
+      ]
+    },
+
+    bottomColor: {
+      label: "Cor da parte de baixo", name: "bottom color", group: "Roupa", default: "brown",
+      options: null // filled from COLORS below
+    },
+
+    bottomPattern: {
+      label: "Estampa da parte de baixo", name: "bottom pattern", group: "Roupa", default: "none",
+      options: null // filled from PATTERNS below
+    },
+
+    outerwear: {
+      label: "Por cima", name: "outerwear", group: "Roupa", default: "none",
+      options: [
+        { id: "none", pt: "Nada", en: "" },
+        { id: "cardigan", pt: "Cardigã oversized", en: "an oversized {{outerColor}} cardigan worn properly on both shoulders" },
+        { id: "coat", pt: "Casaco longo de lã", en: "a long {{outerColor}} wool coat with large buttons" },
+        { id: "duffle", pt: "Casaco duffle com capuz", en: "a {{outerColor}} duffle coat with toggle buttons and a hood" },
+        { id: "trench", pt: "Trench coat", en: "a {{outerColor}} trench coat with a soft belt" },
+        { id: "bomber", pt: "Jaqueta bomber", en: "an oversized {{outerColor}} bomber jacket" },
+        { id: "denim", pt: "Jaqueta jeans", en: "a {{outerColor}} denim jacket" },
+        { id: "raincoat", pt: "Capa de chuva", en: "a glossy {{outerColor}} raincoat with the hood down" },
+        { id: "capelet", pt: "Capinha curta com laço", en: "a short {{outerColor}} capelet tied with a ribbon" },
+        { id: "poncho", pt: "Poncho de tricô", en: "a cozy {{outerColor}} knit poncho" },
+        { id: "apron", pt: "Avental com babado", en: "a frilly {{outerColor}} apron" }
+      ]
+    },
+
+    outerColor: {
+      label: "Cor do que vai por cima", name: "outerwear color", group: "Roupa", default: "camel",
+      options: null // filled from COLORS below
+    },
+
+    legwear: {
+      label: "Meias", name: "legwear", group: "Roupa", default: "thighhigh",
+      options: [
+        { id: "none", pt: "Nenhuma à mostra", en: "" },
+        { id: "thighhigh", pt: "Meia 7/8 escura", en: "dark gray thigh-high socks" },
+        { id: "thighblack", pt: "Meia 7/8 preta", en: "black thigh-high socks" },
+        { id: "thighstripe", pt: "Meia 7/8 preta com listras brancas no topo", en: "black thigh-high socks with two thin white stripes around the top" },
+        { id: "tights", pt: "Meia-calça preta", en: "black tights" },
+        { id: "kneewhite", pt: "Meia branca até o joelho", en: "white knee-high socks" },
+        { id: "striped", pt: "Meia listrada", en: "striped knee-high socks in {{accentColor}} and white" },
+        { id: "legwarmers", pt: "Polainas", en: "slouchy {{mainColor}} leg warmers" },
+        { id: "ankle", pt: "Meia soquete", en: "short ankle socks" }
+      ]
+    },
+
+    shoes: {
+      label: "Calçado", name: "shoes", group: "Roupa", default: "none",
+      options: [
+        // "none" by default: the favorite framing (hips up) does not show the feet
+        { id: "none", pt: "Não especificar", en: "" },
+        { id: "loafers", pt: "Mocassim", en: "{{shoesColor}} loafers" },
+        { id: "maryjanes", pt: "Sapato boneca (Mary Jane)", en: "{{shoesColor}} Mary Jane shoes" },
+        { id: "sneakers", pt: "Tênis", en: "chunky {{shoesColor}} sneakers" },
+        { id: "ankleboots", pt: "Bota curta", en: "{{shoesColor}} ankle boots" },
+        { id: "rainboots", pt: "Galocha", en: "{{shoesColor}} rubber rain boots" },
+        { id: "slippers", pt: "Pantufa de gatinho", en: "fluffy {{shoesColor}} cat-face slippers" },
+        { id: "sandals", pt: "Sandália com tira", en: "{{shoesColor}} strap sandals" }
+      ]
+    },
+
+    shoesColor: {
+      label: "Cor do calçado", name: "shoes color", group: "Roupa", default: "brown",
+      options: null // filled from COLORS below
+    },
+
+    // Used by the ready-made outfits and by small details (ribbons, bell, background tint).
+    // Declared after the pieces so the piece fields sit right under "Roupa" in the UI.
     mainColor: {
       label: "Cor principal", name: "main clothing color", group: "Roupa", default: "beige",
       options: null // filled from COLORS below
@@ -203,18 +341,6 @@ window.CATALOG = {
     accentColor: {
       label: "Cor de destaque", name: "accent color", group: "Roupa", default: "teal",
       options: null // filled from COLORS below
-    },
-
-    legwear: {
-      label: "Meias", name: "legwear", group: "Roupa", default: "thighhigh",
-      options: [
-        { id: "thighhigh", pt: "Meia 7/8 escura", en: "dark gray thigh-high socks" },
-        { id: "tights", pt: "Meia-calça preta", en: "black tights" },
-        { id: "kneewhite", pt: "Meia branca até o joelho", en: "white knee-high socks" },
-        { id: "striped", pt: "Meia listrada", en: "striped knee-high socks in {{accentColor}} and white" },
-        { id: "legwarmers", pt: "Polainas", en: "slouchy {{mainColor}} leg warmers" },
-        { id: "ankle", pt: "Meia soquete", en: "short ankle socks" }
-      ]
     },
 
     hairAccessory: {
@@ -258,7 +384,7 @@ window.CATALOG = {
     focus: {
       label: "Destaque", name: "focus", group: "Clima e expressão", default: "face",
       options: [
-        { id: "face", pt: "Rosto, cabelo e orelhas", en: "her face, hair and ears are the center of the image. Draw the hair with soft, airy strands and gentle highlights, the eyes large and expressive, and the ears fluffy and detailed. Keep the clothing simple, with little detail, so it does not compete with the face." },
+        { id: "face", pt: "Rosto, cabelo e orelhas", en: "her face, hair and ears are the center of the image. Draw the hair with soft, airy strands and gentle highlights, the eyes large and expressive, and the ears fluffy and detailed. Draw the clothing as described but render it simply, with little extra detail, so it does not compete with the face." },
         { id: "balanced", pt: "Equilibrado", en: "the whole character reads clearly, with the face as the main point of interest and the outfit in a supporting role." },
         { id: "outfit", pt: "Roupa em destaque", en: "the outfit is shown clearly with nice fabric folds and details, while the face stays expressive and clean." }
       ]
@@ -370,6 +496,22 @@ window.CATALOG = {
     ["camel", "Caramelo", "camel"],
     ["brown", "Marrom", "chocolate brown"]
   ].map(([id, pt, en]) => ({ id, pt, en }));
-  window.CATALOG.vars.mainColor.options = COLORS;
-  window.CATALOG.vars.accentColor.options = COLORS;
+
+  /* Fabric patterns: adjectives placed between the color and the garment ("a cream striped sweater"). */
+  const PATTERNS = [
+    ["none", "Lisa", ""],
+    ["stripes", "Listrada", "striped"],
+    ["polka", "Bolinhas", "polka-dot"],
+    ["plaid", "Xadrez", "plaid"],
+    ["gingham", "Xadrez vichy", "gingham"],
+    ["argyle", "Losangos (argyle)", "argyle"],
+    ["floral", "Florzinhas", "small floral-print"],
+    ["hearts", "Coraçõezinhos", "heart-print"],
+    ["paws", "Patinhas de gato", "cat-paw-print"],
+    ["stars", "Estrelinhas", "star-print"]
+  ].map(([id, pt, en]) => ({ id, pt, en }));
+
+  const V = window.CATALOG.vars;
+  for (const name of ["mainColor", "accentColor", "topColor", "bottomColor", "outerColor", "shoesColor"]) V[name].options = COLORS;
+  for (const name of ["topPattern", "bottomPattern"]) V[name].options = PATTERNS;
 })();
