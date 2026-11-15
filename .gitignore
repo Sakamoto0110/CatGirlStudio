@@ -1,0 +1,3 @@
+# Real-ESRGAN executable and models, downloaded locally (see README)
+tools/bin/
+__pycache__/

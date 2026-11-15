@@ -1,0 +1,256 @@
+<title>Catgirl Prompt Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a workbench in three columns — pose shelf | character sheet | prompt ticket (sticky). */
+:root {
+  --bg: #f6f4f9;
+  --surface: #ffffff;
+  --surface-2: #efebf5;
+  --ink: #1f1a2b;
+  --muted: #6b6380;
+  --line: #ddd6e8;
+  --accent: #c93a64;
+  --accent-soft: #fbe4ec;
+  --accent-ink: #ffffff;
+  --ok: #1b7f61;
+  --font-display: "M PLUS Rounded 1c", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14111b; --surface: #1c1826; --surface-2: #261f34; --ink: #eeeaf6; --muted: #a69ebb;
+    --line: #362d48; --accent: #ff7d9f; --accent-soft: #3a1d2a; --accent-ink: #22101a; --ok: #63d4b0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14111b; --surface: #1c1826; --surface-2: #261f34; --ink: #eeeaf6; --muted: #a69ebb;
+  --line: #362d48; --accent: #ff7d9f; --accent-soft: #3a1d2a; --accent-ink: #22101a; --ok: #63d4b0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand svg { flex: none; }
+.brand h1 { font: 800 1.45rem/1.1 var(--font-display); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+.top-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; text-decoration: none; font-weight: 500;
+  transition: background-color .15s, border-color .15s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.small { padding: 4px 10px; font-size: .85rem; }
+.icon-btn {
+  width: 34px; height: 34px; flex: none; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface); cursor: pointer; display: grid; place-items: center; color: var(--muted);
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--ink); }
+.icon-btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+.bench { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 820px) {
+  .bench { grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); }
+  .shelf { grid-column: 1; }
+  .sheet { grid-column: 1; }
+  .ticket { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); }
+}
+@media (min-width: 1240px) {
+  .bench { grid-template-columns: minmax(250px, 290px) minmax(0, 1fr) minmax(360px, 440px); }
+  .shelf { grid-column: 1; grid-row: 1; position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); }
+  .sheet { grid-column: 2; grid-row: 1; }
+  .ticket { grid-column: 3; grid-row: 1; }
+}
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; min-width: 0; }
+.panel-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; }
+.panel-head h2 { font: 700 1rem/1.2 var(--font-display); margin: 0; }
+.panel-head .count { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.panel-head .spacer { flex: 1; }
+
+/* pose shelf */
+.shelf-tools { padding: 0 16px 10px; display: grid; gap: 8px; }
+.search { width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 3px 10px;
+  font-size: .82rem; cursor: pointer; color: var(--muted);
+}
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.poses { list-style: none; margin: 0; padding: 0 10px 12px; display: grid; gap: 6px; }
+@media (min-width: 1240px) { .poses { max-height: calc(100dvh - 230px); overflow-y: auto; } }
+@media (max-width: 819px) {
+  .poses { grid-auto-flow: column; grid-auto-columns: minmax(200px, 72%); overflow-x: auto; padding-bottom: 14px; scroll-snap-type: x mandatory; }
+  .poses li { scroll-snap-align: start; }
+}
+@media (min-width: 820px) and (max-width: 1239px) { .poses { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } }
+.pose {
+  width: 100%; height: 100%; text-align: left; border: 1px solid transparent; background: var(--surface-2);
+  border-radius: var(--radius); padding: 10px 12px; cursor: pointer; display: grid; gap: 2px;
+}
+.pose:hover { border-color: var(--line); }
+.pose[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.pose .name { font-weight: 600; }
+.pose .desc { color: var(--muted); font-size: .84rem; line-height: 1.35; }
+.pose .cat { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.empty { color: var(--muted); padding: 8px 6px; font-size: .9rem; }
+
+/* character sheet */
+.sheet-body { padding: 4px 16px 16px; display: grid; gap: 18px; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { font: 700 .78rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .1em; color: var(--accent); padding: 0; margin-bottom: 10px; }
+.fields { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: .84rem; color: var(--muted); }
+.field-row { display: flex; gap: 6px; min-width: 0; }
+.field select, .field input[type="text"] {
+  flex: 1; min-width: 0; width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+}
+.field.locked select { border-color: var(--accent); }
+.field input[type="text"] { font-family: var(--font-mono); font-size: .85rem; }
+
+/* prompt ticket */
+.ticket-body { padding: 0 16px 16px; display: grid; gap: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font: 500 .76rem/1 var(--font-mono); padding: 5px 8px; border-radius: 6px; background: var(--surface-2); color: var(--muted); font-variant-numeric: tabular-nums; }
+.prompt {
+  margin: 0; padding: 14px; border-radius: var(--radius); background: var(--bg); border: 1px dashed var(--line);
+  font: 13px/1.55 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 46dvh; overflow-y: auto;
+}
+.prompt .ph { color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.hint { margin: 0; color: var(--muted); font-size: .82rem; }
+.status { min-height: 1.3em; margin: 0; font-size: .85rem; color: var(--ok); }
+.sub { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 10px; }
+.sub h3 { margin: 0; font: 700 .92rem/1.2 var(--font-display); }
+.changes { margin: 0; padding-left: 18px; font-size: .88rem; }
+.changes li { overflow-wrap: anywhere; }
+.fav-form { display: flex; gap: 6px; }
+.fav-form input { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.favs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.favs li { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); min-width: 0; }
+.favs .fav-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
+.favs .fav-pose { color: var(--muted); font-size: .78rem; }
+
+.foot { margin-top: 22px; color: var(--muted); font-size: .82rem; max-width: 70ch; }
+.foot code { font-family: var(--font-mono); font-size: .8rem; }
+
+/* phone: keep copy/open within thumb reach */
+.dock { display: none; }
+@media (max-width: 819px) {
+  body { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .dock {
+    display: flex; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    background: var(--surface); border-top: 1px solid var(--line);
+  }
+  .dock .btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<header class="top">
+  <div class="brand">
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M6 30 L9 5 L19 17 Z" fill="var(--accent)"/>
+      <path d="M34 30 L31 5 L21 17 Z" fill="var(--accent)"/>
+      <path d="M10 26 L11.5 12 L16.5 18 Z" fill="var(--accent-soft)"/>
+      <path d="M30 26 L28.5 12 L23.5 18 Z" fill="var(--accent-soft)"/>
+      <rect x="6" y="28" width="28" height="4" rx="2" fill="var(--ink)"/>
+    </svg>
+    <div>
+      <h1>Catgirl Prompt Builder</h1>
+      <p>Escolha a pose, ajuste a personagem e cole o prompt no GPT.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="btn-random" type="button" title="Sorteia todos os campos que não estão travados">Sortear campos</button>
+    <button class="btn" id="btn-random-pose" type="button">Pose aleatória</button>
+    <button class="btn" id="btn-reset" type="button">Restaurar padrão</button>
+  </div>
+</header>
+
+<main class="bench">
+  <section class="panel shelf" aria-labelledby="shelf-title">
+    <div class="panel-head"><h2 id="shelf-title">Poses</h2><span class="count" id="pose-count"></span></div>
+    <div class="shelf-tools">
+      <input class="search" id="pose-search" type="search" placeholder="Buscar pose…" aria-label="Buscar pose">
+      <div class="chips" id="pose-cats" role="group" aria-label="Categorias"></div>
+    </div>
+    <ul class="poses" id="pose-list"></ul>
+  </section>
+
+  <section class="panel sheet" aria-labelledby="sheet-title">
+    <div class="panel-head">
+      <h2 id="sheet-title">Personagem e cena</h2><span class="spacer"></span>
+      <span class="count">Cadeado: mantém o campo ao trocar de pose ou sortear</span>
+    </div>
+    <div class="sheet-body" id="sheet"></div>
+  </section>
+
+  <section class="panel ticket" aria-labelledby="ticket-title">
+    <div class="panel-head"><h2 id="ticket-title">Prompt</h2><span class="spacer"></span><span class="count" id="char-count"></span></div>
+    <div class="ticket-body">
+      <div class="meta" id="meta"></div>
+      <pre class="prompt" id="prompt" tabindex="0" aria-label="Prompt gerado"></pre>
+      <div class="actions">
+        <button class="btn primary" id="btn-copy" type="button">Copiar prompt</button>
+        <a class="btn" id="btn-gpt" href="https://chatgpt.com/" target="_blank" rel="noopener">Abrir no ChatGPT ↗</a>
+      </div>
+      <p class="hint">“Abrir no ChatGPT” abre uma conversa com o prompt já preenchido e também copia o texto, caso ele chegue vazio.</p>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <div class="sub" id="edit-box">
+        <h3>Ajuste rápido</h3>
+        <p class="hint" id="edit-hint"></p>
+        <ul class="changes" id="edit-changes"></ul>
+        <pre class="prompt" id="edit-prompt" tabindex="0" aria-label="Pedido de ajuste" hidden></pre>
+        <div class="actions" id="edit-actions" hidden>
+          <button class="btn primary small" id="btn-copy-edit" type="button">Copiar ajuste</button>
+          <button class="btn small" id="btn-rebase" type="button">Usar o atual como base</button>
+        </div>
+      </div>
+
+      <div class="sub">
+        <h3>Favoritos</h3>
+        <form class="fav-form" id="fav-form">
+          <input id="fav-name" type="text" placeholder="Nome da combinação" aria-label="Nome do favorito" maxlength="60">
+          <button class="btn small" type="submit">Salvar</button>
+        </form>
+        <ul class="favs" id="favs"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<p class="foot">Os prefabs ficam em <code>data/prefabs.js</code> e as variáveis em <code>data/catalog.js</code>. Os prompts saem em inglês porque é o que o gerador de imagem entende melhor; as opções aparecem em português. Os favoritos ficam salvos só neste navegador.</p>
+
+<div class="dock">
+  <button class="btn primary" id="dock-copy" type="button">Copiar prompt</button>
+  <a class="btn" id="dock-gpt" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT ↗</a>
+</div>
+
+<script src="data/catalog.js"></script>
+<script src="data/prefabs.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
