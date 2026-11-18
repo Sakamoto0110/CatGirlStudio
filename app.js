@@ -8,7 +8,7 @@
   const E = window.PromptEngine.create(C, PREFABS);
   const VARS = C.vars;
   const CUSTOM = E.CUSTOM;
-  const { findPrefab, defaultValues, isValidValue, build, editRequest } = E;
+  const { findPrefab, defaultValues, normalizeValue, build, editRequest } = E;
   const ALL = "Todas";
   const KEY_STATE = "cpb.state.v1";
   const KEY_FAVS = "cpb.favorites.v1";
@@ -31,23 +31,41 @@
   };
 
   function applyPrefabDefaults(prefab) {
+    // the mascot format belongs to the mascot prefab; leaving it goes back to the portrait format
+    if (!("format" in (prefab.defaults || {})) && state.values.format === "mascot" && !state.locks.has("format")) {
+      state.values.format = "portrait";
+    }
     for (const [name, value] of Object.entries(prefab.defaults || {})) {
-      if (!state.locks.has(name) && isValidValue(name, value)) state.values[name] = value;
+      const v = normalizeValue(name, value);
+      if (!state.locks.has(name) && v !== undefined) state.values[name] = v;
     }
   }
 
+  // copies lists too, so a saved selection never shares an array with the live state
+  const copyValues = values => Object.fromEntries(Object.entries(values).map(([k, v]) => [k, Array.isArray(v) ? [...v] : v]));
+
   function snapshot() {
-    return { prefabId: state.prefabId, values: { ...state.values }, custom: { ...state.custom } };
+    return { prefabId: state.prefabId, values: copyValues(state.values), custom: { ...state.custom } };
+  }
+
+  /** A stored selection (favorite, saved state, studio image) with its values in today's shape. */
+  function normalizeSelection(sel) {
+    const values = {};
+    for (const [name, value] of Object.entries((sel && sel.values) || {})) {
+      const v = normalizeValue(name, value);
+      if (v !== undefined) values[name] = v;
+    }
+    return { prefabId: sel && sel.prefabId, values, custom: { ...((sel && sel.custom) || {}) } };
   }
 
   function restore() {
     const saved = store.get(KEY_STATE);
     if (!saved || typeof saved !== "object") { applyPrefabDefaults(findPrefab(state.prefabId)); return; }
     if (saved.prefabId && PREFABS.some(p => p.id === saved.prefabId)) state.prefabId = saved.prefabId;
-    for (const [name, value] of Object.entries(saved.values || {})) if (isValidValue(name, value)) state.values[name] = value;
+    Object.assign(state.values, normalizeSelection(saved).values);
     for (const [name, text] of Object.entries(saved.custom || {})) if (VARS[name] && typeof text === "string") state.custom[name] = text;
     for (const name of saved.locks || []) if (VARS[name]) state.locks.add(name);
-    if (saved.baseline && saved.baseline.values) state.baseline = saved.baseline;
+    if (saved.baseline && saved.baseline.values) state.baseline = normalizeSelection(saved.baseline);
   }
 
   function persist() {
@@ -145,11 +163,64 @@
     sheet.replaceChildren(...groups.filter(Boolean));
   }
 
+  // a random value: one option, or for a multi-choice field up to two that do not share a slot
+  function randomValue(name) {
+    const def = VARS[name];
+    if (!def.multi) return pick(def.options).id;
+    const count = Math.floor(Math.random() * 3);
+    const out = [], slots = new Set();
+    for (const o of [...def.options].sort(() => Math.random() - 0.5)) {
+      if (out.length >= count) break;
+      if (o.slot && slots.has(o.slot)) continue;
+      out.push(o.id);
+      if (o.slot) slots.add(o.slot);
+    }
+    return out;
+  }
+
+  function toggleOption(name, opt) {
+    const def = VARS[name];
+    const current = state.values[name] || [];
+    let next = current.filter(id => id !== opt.id);
+    if (next.length === current.length) {
+      // one per slot: picking a second hat takes the first one off
+      if (opt.slot) next = next.filter(id => (def.options.find(o => o.id === id) || {}).slot !== opt.slot);
+      next.push(opt.id);
+    }
+    state.values[name] = next;
+    update(true);
+    const chip = $("m-" + name + "-" + opt.id);
+    if (chip) chip.focus();
+  }
+
   function renderField(name) {
     const def = VARS[name];
     const value = state.values[name];
     const locked = state.locks.has(name);
     const selectId = "f-" + name;
+
+    const dice = el("button", {
+      class: "icon-btn", type: "button", title: "Sortear " + def.label.toLowerCase(), "aria-label": "Sortear " + def.label,
+      onclick: () => { state.values[name] = randomValue(name); update(true); }
+    }, icon("dice"));
+    const lock = el("button", {
+      class: "icon-btn", type: "button", "aria-pressed": String(locked),
+      title: locked ? "Destravar" : "Travar (não muda ao trocar de pose ou sortear)",
+      "aria-label": (locked ? "Destravar " : "Travar ") + def.label,
+      onclick: () => { locked ? state.locks.delete(name) : state.locks.add(name); update(true); }
+    }, icon(locked ? "lock" : "unlock"));
+
+    if (def.multi) {
+      const chosen = new Set(value || []);
+      const labelId = "l-" + name;
+      return el("div", { class: "field field-multi" + (locked ? " locked" : "") },
+        el("div", { class: "field-head" }, el("span", { class: "field-label", id: labelId, text: def.label }), dice, lock),
+        el("div", { class: "multi", role: "group", "aria-labelledby": labelId },
+          def.options.map(o => el("button", {
+            class: "chip", type: "button", id: "m-" + name + "-" + o.id,
+            "aria-pressed": String(chosen.has(o.id)), text: o.pt, onclick: () => toggleOption(name, o)
+          }))));
+    }
 
     const select = el("select", {
       id: selectId,
@@ -167,18 +238,7 @@
 
     return el("div", { class: "field" + (locked ? " locked" : "") },
       el("label", { for: selectId, text: def.label }),
-      el("div", { class: "field-row" },
-        select,
-        el("button", {
-          class: "icon-btn", type: "button", title: "Sortear " + def.label.toLowerCase(), "aria-label": "Sortear " + def.label,
-          onclick: () => { state.values[name] = pick(def.options).id; update(true); }
-        }, icon("dice")),
-        el("button", {
-          class: "icon-btn", type: "button", "aria-pressed": String(locked),
-          title: locked ? "Destravar" : "Travar (não muda ao trocar de pose ou sortear)",
-          "aria-label": (locked ? "Destravar " : "Travar ") + def.label,
-          onclick: () => { locked ? state.locks.delete(name) : state.locks.add(name); update(true); }
-        }, icon(locked ? "lock" : "unlock"))),
+      el("div", { class: "field-row" }, select, dice, lock),
       custom);
   }
 
@@ -190,7 +250,10 @@
 
     $("char-count").textContent = result.text.length.toLocaleString("pt-BR") + " caracteres";
     const fmt = VARS.format.options.find(o => o.id === state.values.format);
-    const size = { portrait: "1024×1536", landscape: "1536×1024", square: "1024×1024" }[state.values.format] || "tamanho livre";
+    const size = {
+      portrait: "1024×1536", mascot: "1024×1536", landscape: "1536×1024", square: "1024×1024",
+      wide: "2560×1080", fhd: "1920×1080", vertical: "1080×1920"
+    }[state.values.format] || "tamanho livre";
     $("meta").replaceChildren(
       el("span", { class: "tag", text: findPrefab(state.prefabId).name }),
       el("span", { class: "tag", text: size }),
@@ -259,11 +322,15 @@
         del);
     }));
   }
-  function loadFav(f) {
-    if (PREFABS.some(p => p.id === f.prefabId)) state.prefabId = f.prefabId;
-    for (const [name, value] of Object.entries(f.values || {})) if (isValidValue(name, value)) state.values[name] = value;
-    state.custom = { ...(f.custom || {}) };
+  function loadSelection(raw) {
+    const sel = normalizeSelection(raw);
+    if (PREFABS.some(p => p.id === sel.prefabId)) state.prefabId = sel.prefabId;
+    Object.assign(state.values, sel.values);
+    state.custom = sel.custom;
     renderShelf(); update(true);
+  }
+  function loadFav(f) {
+    loadSelection(f);
     say("Favorito “" + f.name + "” carregado.");
   }
 
@@ -279,7 +346,7 @@
     for (let pass = 0; pass < 3; pass++) {
       for (const name of build(state).used) {
         if (state.locks.has(name) || touched.has(name)) continue;
-        state.values[name] = pick(VARS[name].options).id;
+        state.values[name] = randomValue(name);
         touched.add(name);
       }
     }
@@ -328,6 +395,9 @@
   renderFavs();
   update(true);
 
-  // exposed for quick checks from the console
-  window.CPB = { build: s => build(s || state), editRequest, state, PREFABS, VARS };
+  // exposed for quick checks from the console, and for studio.js (local studio only)
+  window.CPB = {
+    build: s => build(s || state), editRequest, state, PREFABS, VARS, snapshot, loadSelection, say,
+    setBaseline(sel) { state.baseline = normalizeSelection(JSON.parse(JSON.stringify(sel))); renderEdit(); persist(); }
+  };
 })();

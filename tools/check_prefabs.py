@@ -49,6 +49,12 @@ report = ctx.eval(r"""
   const contextFor = (name, seen = new Set()) => {
     const start = base("patinha");
     if (E.build(start).used.has(name)) return start;
+    // pose variations: the prefab whose pose names the variable
+    for (const p of window.PREFABS) {
+      if (!mentions(p.pose, name)) continue;
+      const s = base(p.id);
+      if (E.build(s).used.has(name)) return s;
+    }
     if (seen.has(name)) return null;
     seen.add(name);
     for (const [parent, pdef] of Object.entries(E.VARS)) {
@@ -62,6 +68,16 @@ report = ctx.eval(r"""
     }
     return null;
   };
+  // {{var.field}}: every option of var must carry the field, or the text silently goes empty
+  const texts = [...Object.values(window.CATALOG.blocks), ...window.PREFABS.map(p => p.pose),
+    ...Object.values(E.VARS).flatMap(d => d.options.map(o => o.en))];
+  for (const t of texts) {
+    for (const m of String(t).matchAll(/\{\{(\w+)\.(\w+)\}\}/g)) {
+      const def = E.VARS[m[1]];
+      if (!def) { out.problems.push(`{{${m[1]}.${m[2]}}}: unknown variable`); continue; }
+      for (const o of def.options) if (!(m[2] in o)) out.problems.push(`var ${m[1]}=${o.id}: missing field "${m[2]}"`);
+    }
+  }
   for (const [name, def] of Object.entries(E.VARS)) {
     const ctx = contextFor(name);
     if (!ctx) out.problems.push(`var ${name}: no selection reaches it, so it never shows up`);
@@ -69,7 +85,7 @@ report = ctx.eval(r"""
     for (const o of def.options) {
       if (optIds.has(o.id)) out.problems.push(`var ${name}: duplicate option id ${o.id}`);
       optIds.add(o.id);
-      const s = JSON.parse(JSON.stringify(ctx || base("patinha"))); s.values[name] = o.id;
+      const s = JSON.parse(JSON.stringify(ctx || base("patinha"))); s.values[name] = def.multi ? [o.id] : o.id;
       const r = E.build(s);
       if (/\{\{/.test(r.text)) out.problems.push(`var ${name}=${o.id}: unresolved placeholder`);
       if (glitch(r.text)) out.problems.push(`var ${name}=${o.id}: spacing/punctuation glitch`);
@@ -82,7 +98,15 @@ report = ctx.eval(r"""
         }
       }
     }
-    if (!def.options.some(o => o.id === def.default)) out.problems.push(`var ${name}: default ${def.default} is not an option`);
+    const defaults = def.multi ? (Array.isArray(def.default) ? def.default : [null]) : [def.default];
+    for (const d of defaults) if (!def.options.some(o => o.id === d)) out.problems.push(`var ${name}: default ${d} is not an option`);
+    if (def.multi) {
+      // every option alone, and all options together (one per slot), must read cleanly
+      const s = JSON.parse(JSON.stringify(ctx || base("patinha")));
+      const seen = new Set();
+      s.values[name] = def.options.filter(o => !o.slot || (!seen.has(o.slot) && seen.add(o.slot))).map(o => o.id);
+      if (glitch(E.build(s).text) || /\{\{/.test(E.build(s).text)) out.problems.push(`var ${name}: glitch with several options at once`);
+    }
   }
   // edit request: change eye color and accent color, expect eye color + every slot using the accent
   const a = base("patinha"), b = JSON.parse(JSON.stringify(a));

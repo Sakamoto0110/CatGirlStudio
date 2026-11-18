@@ -40,6 +40,9 @@ por exemplo, esconde o campo "Meias".
 junta o resto como "x, y and z". É assim que funcionam as duas roupas "Montar…":
 elas abrem os campos de peça (parte de cima, parte de baixo ou vestido, o que vai
 por cima, meias e calçado, cada um com cor e, nas peças principais, estampa). O
+penteado "Montar por partes" faz o mesmo com estilo, comprimento, franja, ahoge,
+mechas laterais e detalhe de cor. Nessas opções montadas, o Ajuste rápido pede só
+a parte que mudou. O
 texto de uma peça não pode ter vírgula, senão a lista se embaralha. Uma opção com
 texto vazio também apaga a palavra que ficaria pendurada antes dela ("shorts and
 {{legwear}}" vira "shorts").
@@ -84,6 +87,23 @@ Para uma nova opção em um campo existente, adicione `{ id, pt, en }` na lista
 `options` da variável. Para uma variável nova, crie-a em `CATALOG.vars` e use
 `{{nome}}` em algum bloco ou pose.
 
+**Uma escolha mudando texto em outro lugar:** `{{var.campo}}` vira outro campo
+da opção escolhida em `var`. Os fundos com cenário terminam em `{{focus.bg}}`:
+com Destaque em rosto, equilibrado ou roupa, o cenário sai desfocado; com
+"Cenário em destaque", sai nítido e detalhado. Toda opção da variável precisa
+ter o campo, e o `check_prefabs.py` acusa se faltar.
+
+**Vários ao mesmo tempo:** uma variável com `multi: true` (os acessórios) vira
+botões que ligam e desligam, e o valor é uma lista de ids. Cada opção escolhida
+acrescenta sua própria frase. Opções com o mesmo `slot` se excluem: escolher a
+boina tira o gorro, escolher o cachecol tira a gargantilha. Favoritos e estados
+salvos de antes, com um acessório só, são convertidos sozinhos.
+
+**Pose com variações:** um prefab cujo `pose` é só uma variável (`"{{idlePose}}"`,
+`"{{mascotPose}}"`) abre o campo "Variação da pose" quando é escolhido, e cada
+opção da variável é uma pose completa. É assim que funcionam o "Idle" e o
+"Mascote de desktop". A variável fica no grupo `"Pose"`.
+
 ## Conferir antes de publicar
 
 ```bash
@@ -94,6 +114,42 @@ python tools/check_prefabs.py
 Roda todos os prefabs e todas as opções de todas as variáveis e aponta
 placeholder não resolvido, default inválido, id duplicado e espaço ou pontuação
 quebrados. Com `--show`, imprime dois prompts de exemplo.
+
+## Gerar pela API (estúdio local)
+
+```bash
+python tools/studio.py
+```
+
+Abre a mesma página em http://127.0.0.1:8770 com um painel "Gerar pela API":
+
+- **Modelo**: Sunburst (mais cuidadoso, melhor para ajustes) ou Flare (mais
+  rápido), ambos GPT-Image-2.6 e com o mesmo preço por token.
+- **Qualidade**: medium, high ou xhigh. O botão mostra o custo estimado pela
+  calculadora da OpenAI (1024×1536: ~US$ 0,03 / 0,04 / 0,07); o custo real vem
+  do uso que a API devolve e fica salvo com a imagem.
+- **Quantidade**: de 1 a 4 imagens com o mesmo prompt.
+- **Aplicar nesta imagem** (no Ajuste rápido): manda a imagem escolhida junto
+  com o pedido "Edit this image… Change only…". Clicar numa miniatura volta os
+  campos para como aquela imagem foi feita.
+- **Fazer 2x**: roda o `tools/postprocess.py` na imagem.
+
+O tamanho segue o campo Formato, e o fundo transparente vira `background:
+transparent` na API. Os formatos de wallpaper (2560×1080, 1920×1080 e
+1080×1920) saem no tamanho exato da tela: a API só aceita lados múltiplos de 16,
+então o estúdio pede 8 px a mais e corta pelo centro ao salvar. No ChatGPT esses
+formatos não têm efeito no tamanho; lá a imagem sai nos tamanhos dele. Cada imagem vai para `Pictures\Catgirls\api` (mude com
+`--out`) com um `.json` ao lado: prompt, seleção dos campos, modelo, qualidade,
+custo, uso de tokens e, nos ajustes, a imagem de origem.
+
+A chave vem da variável de ambiente `OpenAI_CatGirl_API`. No Windows o estúdio
+também lê a variável salva no usuário, então funciona mesmo se ela foi criada
+depois de abrir o terminal. A chave não aparece na página nem no console. O
+servidor só escuta em 127.0.0.1 e recusa pedidos que não venham da própria página,
+para outro site aberto no navegador não conseguir gastar a chave.
+
+Com `--fake` o estúdio desenha imagens de teste no lugar da API e não cobra nada.
+A página publicada não tem esse painel: ela não carrega o `studio.js`.
 
 ## Depois de gerar
 

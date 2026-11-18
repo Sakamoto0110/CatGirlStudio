@@ -9,6 +9,9 @@ window.PromptEngine = (function () {
   const PLACEHOLDER = /\{\{(\w+)\}\}/g;
   // {{list:a,b,c}} expands each name, drops the empty ones and joins the rest as "x, y and z"
   const LIST = /\{\{list:(\w+(?:,\w+)*)\}\}/g;
+  // {{var.field}} is another field of the option chosen for var (e.g. {{focus.bg}}), so one
+  // choice can steer text elsewhere in the prompt
+  const FIELD = /\{\{(\w+)\.(\w+)\}\}/g;
   // stands where an option said nothing, until tidy() removes it with its joining word
   const EMPTY = "\uE000";
 
@@ -25,27 +28,61 @@ window.PromptEngine = (function () {
 
     function defaultValues() {
       const v = {};
-      for (const [name, def] of Object.entries(VARS)) v[name] = def.default;
+      for (const [name, def] of Object.entries(VARS)) v[name] = Array.isArray(def.default) ? [...def.default] : def.default;
       return v;
     }
 
-    function isValidValue(name, value) {
-      return has(VARS, name) && (value === CUSTOM || VARS[name].options.some(o => o.id === value));
+    function isMulti(name) { return has(VARS, name) && !!VARS[name].multi; }
+
+    /**
+     * The value in the shape its variable keeps, or undefined if it is not valid there.
+     * A multi-choice variable holds a list of option ids; an old single id (or "none",
+     * saved before the variable became multi-choice) is turned into a list.
+     */
+    function normalizeValue(name, value) {
+      if (!has(VARS, name)) return undefined;
+      const ids = VARS[name].options.map(o => o.id);
+      if (isMulti(name)) {
+        const list = Array.isArray(value) ? value : typeof value === "string" ? [value] : null;
+        return list ? [...new Set(list.filter(id => ids.includes(id)))] : undefined;
+      }
+      return value === CUSTOM || ids.includes(value) ? value : undefined;
     }
+
+    function isValidValue(name, value) { return normalizeValue(name, value) !== undefined; }
 
     function optionText(name, s) {
       const def = VARS[name];
       const value = s.values[name];
+      if (def.multi) {
+        // catalog order, not click order, so the same choices always read the same
+        const chosen = Array.isArray(value) ? value : [];
+        return def.options.filter(o => chosen.includes(o.id)).map(o => o.en).join(" ");
+      }
       if (value === CUSTOM) return ((s.custom && s.custom[name]) || "").trim();
       const opt = def.options.find(o => o.id === value) || def.options.find(o => o.id === def.default);
       return opt ? opt.en : "";
+    }
+
+    // a custom (typed) value has no extra fields, so it falls back to the default option's
+    function optionField(name, field, s) {
+      const def = VARS[name];
+      const chosen = def.options.find(o => o.id === s.values[name]);
+      const fallback = def.options.find(o => o.id === def.default);
+      const opt = chosen && has(chosen, field) ? chosen : fallback;
+      return opt && has(opt, field) ? String(opt[field]) : "";
     }
 
     function expand(text, s, used, depth) {
       depth = depth || 0;
       return String(text).replace(LIST, (match, names) => {
         if (depth > 12) return "";
-        return joinList(names.split(",").map(n => tidy(expand("{{" + n + "}}", s, used, depth + 1))).filter(Boolean));
+        const items = names.split(",").map(n => tidy(expand("{{" + n + "}}", s, used, depth + 1))).filter(Boolean);
+        return items.length ? joinList(items) : EMPTY; // an all-empty list also drops its joining word
+      }).replace(FIELD, (match, name, field) => {
+        if (depth > 12 || !has(VARS, name)) return depth > 12 ? "" : match;
+        if (used) used.add(name);
+        return expand(optionField(name, field, s), s, used, depth + 1);
       }).replace(PLACEHOLDER, (match, name) => {
         if (depth > 12) return "";
         if (name === "pose") return expand(findPrefab(s.prefabId).pose, s, used, depth + 1);
@@ -97,22 +134,41 @@ window.PromptEngine = (function () {
       return tidy(expand(optionText(slot, s), s, null));
     }
 
-    // A slot whose chosen option is a {{list:}} (a built outfit) and did not change between
-    // the two selections is compared piece by piece, so the edit names only the piece that changed.
+    // A slot whose chosen option is built from parts (it holds a {{list:}}, like the built
+    // outfit or hairstyle) and did not change between the two selections is compared part by
+    // part, so the edit names only the part that changed. The parts are the list items plus
+    // any other variable written directly in that option.
     function subSlots(slot, a, b) {
       if (slot === "pose" || a.values[slot] !== b.values[slot] || a.values[slot] === CUSTOM) return [slot];
       const opt = VARS[slot].options.find(o => o.id === a.values[slot]);
-      const m = opt && /\{\{list:(\w+(?:,\w+)*)\}\}/.exec(opt.en);
-      return m ? m[1].split(",").filter(n => has(VARS, n)) : [slot];
+      if (!opt || !/\{\{list:/.test(opt.en)) return [slot];
+      const parts = [];
+      for (const m of opt.en.matchAll(/\{\{(?:list:)?(\w+(?:,\w+)*)\}\}/g)) {
+        for (const n of m[1].split(",")) if (has(VARS, n)) parts.push(n);
+      }
+      return parts.length ? parts : [slot];
+    }
+
+    // For a multi-choice slot whose set of choices changed, say what to add and what to take
+    // off, so the edit leaves the other accessories alone.
+    function multiChange(slot, base, current) {
+      const was = new Set(base.values[slot] || []), now = new Set(current.values[slot] || []);
+      const sentences = opts => tidy(opts.map(o => expand(o.en, current, null)).join(" "));
+      const added = VARS[slot].options.filter(o => now.has(o.id) && !was.has(o.id));
+      const removed = VARS[slot].options.filter(o => was.has(o.id) && !now.has(o.id));
+      if (!added.length && !removed.length) return null;
+      return [added.length ? "add: " + sentences(added) : "", removed.length ? "take off: " + sentences(removed) : ""]
+        .filter(Boolean).join(" ");
     }
 
     /** "Edit the last image, change only..." request between two selections. */
     function editRequest(base, current) {
       const changes = [];
-      for (const slot of SLOTS.flatMap(sl => subSlots(sl, base, current))) {
+      for (const slot of new Set(SLOTS.flatMap(sl => subSlots(sl, base, current)))) {
         const before = slotText(slot, base);
-        const after = slotText(slot, current);
+        let after = slotText(slot, current);
         if (before === after) continue;
+        if (isMulti(slot)) after = multiChange(slot, base, current) || after;
         changes.push({
           slot,
           label: slot === "pose" ? "pose" : VARS[slot].name,
@@ -130,7 +186,7 @@ window.PromptEngine = (function () {
       return { changes, text };
     }
 
-    return { CUSTOM, VARS, PREFABS, findPrefab, defaultValues, isValidValue, optionText, expand, tidy, build, SLOTS, editRequest };
+    return { CUSTOM, VARS, PREFABS, findPrefab, defaultValues, isMulti, normalizeValue, isValidValue, optionText, expand, tidy, build, SLOTS, editRequest };
   }
 
   return { create, CUSTOM };

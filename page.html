@@ -127,6 +127,11 @@ legend { font: 700 .78rem/1 var(--font-display); text-transform: uppercase; lett
   flex: 1; min-width: 0; width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
 }
 .field.locked select { border-color: var(--accent); }
+.field-multi { grid-column: 1 / -1; }
+.field-head { display: flex; align-items: center; gap: 6px; }
+.field-head .field-label { flex: 1; min-width: 0; font-size: .84rem; color: var(--muted); }
+.multi { display: flex; flex-wrap: wrap; gap: 6px; }
+.field-multi.locked .multi { outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
 .field input[type="text"] { font-family: var(--font-mono); font-size: .85rem; }
 
 /* prompt ticket */

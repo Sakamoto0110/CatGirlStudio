@@ -17,7 +17,7 @@
  *   pose      English pose text, no trailing period
  *   defaults  { variableName: optionId }
  */
-window.CATEGORIES = ["Em pé", "Sentada e deitada", "Close", "Ação", "Wallpaper"];
+window.CATEGORIES = ["Em pé", "Sentada e deitada", "Close", "Ação", "Escola", "Mascote", "Wallpaper"];
 
 window.PREFABS = [
   /* ------------------------------------------------------------------ Em pé */
@@ -26,6 +26,13 @@ window.PREFABS = [
     desc: "Mão em patinha no queixo, a outra puxando o casaco.",
     pose: "shoulders slightly turned, one sleeve-covered hand curled into a cat-paw gesture under her chin, the other hand lightly tugging the edge of her top, head tilted to the side",
     defaults: { camera: "closeabove", expression: "hintsmug", gaze: "viewer", vibe: "cozy", outfit: "cardigan" }
+  },
+  {
+    // the pose is a variable: picking this prefab opens the "Variação da pose" field
+    id: "idle", name: "Idle (parada, em pé)", category: "Em pé",
+    desc: "Em pé e relaxada; escolha a variação no campo Pose.",
+    pose: "{{idlePose}}",
+    defaults: { camera: "full", expression: "sweet", gaze: "viewer", vibe: "cozy" }
   },
   {
     id: "cachecol", name: "Cachecol ao vento", category: "Em pé",
@@ -200,6 +207,65 @@ window.PREFABS = [
     desc: "Bruxinha lançando um feitiço com brilhos.",
     pose: "casting a little spell with one hand raised, small sparkles and stars swirling around her fingers, her cape fluttering, the other hand holding the brim of her hat",
     defaults: { camera: "knees", expression: "determined", gaze: "viewer", vibe: "playful", outfit: "witch", palette: "night" }
+  },
+
+  /* ----------------------------------------------------------------- Escola */
+  {
+    id: "esc-carteira", name: "Na carteira", category: "Escola",
+    desc: "Sentada na carteira, queixo na mão, lápis no caderno.",
+    pose: "sitting at a school desk, chin resting on one hand, the other hand holding a pencil over an open notebook",
+    defaults: { background: "classroom", camera: "waist", expression: "hintsmug", gaze: "viewer", vibe: "cozy", outfit: "schoolvest", palette: "warm" }
+  },
+  {
+    id: "esc-bochecha", name: "Dedo na bochecha", category: "Escola",
+    desc: "Pensando numa pergunta, dedo na bochecha.",
+    pose: "one index finger pressed thoughtfully to her cheek, the other hand holding a pencil, head tilted as if thinking about a hard question",
+    defaults: { background: "classroom", camera: "waist", expression: "curious", gaze: "viewer", vibe: "playful", outfit: "sailor" }
+  },
+  {
+    id: "esc-mao", name: "Levantando a mão", category: "Escola",
+    desc: "Mão para cima, sabe a resposta.",
+    pose: "sitting up straight at her desk, raising one hand high as if she knows the answer, the other hand resting on her notebook",
+    defaults: { background: "classroom", camera: "waist", expression: "determined", gaze: "viewer", vibe: "energetic", outfit: "blazer" }
+  },
+  {
+    id: "esc-janela", name: "Janela da sala", category: "Escola",
+    desc: "Na janela da sala, olhando para trás, cortina ao vento.",
+    pose: "standing by the classroom window with one hand resting on the window frame, looking back over her shoulder at the viewer, the curtain drifting in the breeze",
+    defaults: { background: "classroom", camera: "knees", expression: "sweet", gaze: "viewer", vibe: "cozy", outfit: "schoolcardigan", palette: "warm" }
+  },
+  {
+    id: "esc-portao", name: "Chegando no portão", category: "Escola",
+    desc: "Bolsa na mão, acenando no portão com cerejeiras.",
+    pose: "standing at the school gate, her school bag held in one hand in front of her, the other hand raised in a small wave",
+    defaults: { background: "schoolgate", camera: "knees", expression: "happy", gaze: "viewer", vibe: "energetic", outfit: "blazer", palette: "spring" }
+  },
+  {
+    id: "esc-corredor", name: "Corredor com livros", category: "Escola",
+    desc: "Andando no corredor com livros, olha para você.",
+    pose: "walking down the hallway carrying a few books in both arms, glancing sideways at the viewer mid-step, tail swaying behind her",
+    defaults: { background: "hallway", camera: "knees", expression: "hintsmug", gaze: "viewer", vibe: "cozy", outfit: "sailor" }
+  },
+  {
+    id: "esc-bento", name: "Lanche no terraço", category: "Escola",
+    desc: "Bentô no colo no terraço, hashi na mão.",
+    pose: "sitting on the school rooftop with a bento box on her lap, holding chopsticks with a bite of food halfway to her mouth",
+    defaults: { background: "schoolroof", camera: "knees", expression: "happy", gaze: "viewer", vibe: "playful", outfit: "schoolvest" }
+  },
+  {
+    id: "esc-quadro", name: "No quadro-negro", category: "Escola",
+    desc: "Pega no flagra escrevendo no quadro.",
+    pose: "standing at the blackboard holding a piece of chalk, half turned toward the viewer as if caught mid-sentence, the board covered in simple doodles with no readable text",
+    defaults: { background: "classroom", camera: "knees", expression: "surprised", gaze: "viewer", vibe: "playful", outfit: "schoolcardigan" }
+  },
+
+  /* ---------------------------------------------------------------- Mascote */
+  {
+    // made to sit on top of a desktop wallpaper: full body, transparent background
+    id: "mascote", name: "Mascote de desktop", category: "Mascote",
+    desc: "Corpo inteiro e fundo transparente; escolha a variação no campo Pose.",
+    pose: "{{mascotPose}}",
+    defaults: { format: "mascot", background: "transparent", camera: "full", expression: "hintsmug", gaze: "viewer", vibe: "cozy" }
   },
 
   /* -------------------------------------------------------------- Wallpaper */

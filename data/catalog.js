@@ -15,6 +15,10 @@
  * (a "none" option) and joins the rest as "x, y and z". Text that goes into a list
  * should have no commas of its own, or the list stops reading as a list.
  *
+ * {{var.field}} is another field of the option chosen for var. Every option of that var
+ * must have the field. Scenic backgrounds end in {{focus.bg}}, so the "Destaque" choice
+ * decides whether the scenery is blurred or drawn sharp.
+ *
  * An option with en "" says nothing. A joining word left before it ("shorts and
  * {{legwear}}") is removed when that happens.
  *
@@ -30,10 +34,11 @@
  *   label    UI label (Portuguese)
  *   name     English name, used in the "change only..." edit request
  *   group    UI section
- *   default  option id used when nothing else sets it
+ *   default  option id used when nothing else sets it (a list of ids for a multi var)
+ *   multi    true: several options at once, shown as chips (see hairAccessory)
  */
 window.CATALOG = {
-  groups: ["Imagem", "Personagem", "Roupa", "Clima e expressão", "Câmera e estilo"],
+  groups: ["Pose", "Imagem", "Personagem", "Roupa", "Clima e expressão", "Câmera e estilo"],
 
   blocks: {
     prompt: [
@@ -72,13 +77,50 @@ window.CATALOG = {
   },
 
   vars: {
+    /* ------------------------------------------------------------------ Pose
+       Variations of one prefab: its pose text is just "{{idlePose}}" (or mascotPose),
+       so this field only shows up while that prefab is picked. */
+    idlePose: {
+      label: "Variação da pose", name: "pose", group: "Pose", default: "behind",
+      options: [
+        { id: "behind", pt: "Mãos para trás", en: "standing relaxed with her weight on one leg, both hands loosely clasped behind her back, head tilted slightly" },
+        { id: "front", pt: "Mãos juntas na frente", en: "standing relaxed, both hands lightly holding each other in front of her, shoulders soft" },
+        { id: "sleeves", pt: "Mãos escondidas nas mangas", en: "standing relaxed, both hands hidden inside her long sleeves and held close under her chin" },
+        { id: "breeze", pt: "Cabelo ao vento", en: "standing relaxed in a gentle breeze, her hair and tail drifting to one side, one hand tucking a strand of hair behind her ear" },
+        { id: "tiptoe", pt: "Na ponta dos pés, esperando", en: "standing on tiptoe with her hands clasped behind her back, as if waiting for someone" },
+        { id: "bag", pt: "Segurando a alça da bolsa", en: "standing relaxed, one hand holding the strap of a small shoulder bag, the other hanging loosely at her side" },
+        { id: "pockets", pt: "Mãos nos bolsos", en: "standing relaxed with both hands tucked into her pockets, head tilted to one side" },
+        { id: "smallwave", pt: "Aceno tímido", en: "standing relaxed, giving a small, shy wave with one hand at shoulder height, the other hand at her side" },
+        { id: "fidget", pt: "Mexendo na ponta do cabelo", en: "standing relaxed, twirling the end of a lock of hair around one finger, looking a little shy" }
+      ]
+    },
+
+    mascotPose: {
+      label: "Variação da pose", name: "pose", group: "Pose", default: "stand",
+      options: [
+        { id: "stand", pt: "Em pé na barra de tarefas", en: "standing on the bottom edge of the image as if it were the floor, relaxed, hands clasped behind her back" },
+        { id: "wave", pt: "Acenando", en: "standing on the bottom edge of the image, waving at the viewer with one hand raised" },
+        { id: "sitedge", pt: "Sentada na beirada, pernas balançando", en: "sitting on the bottom edge of the image as if it were a ledge, legs dangling over it, hands resting on the edge beside her" },
+        { id: "knees", pt: "Sentada abraçando os joelhos", en: "sitting on the bottom edge of the image hugging her knees, tail wrapped around her feet" },
+        { id: "lying", pt: "Deitada lendo", en: "lying on her stomach along the bottom edge of the image, chin propped on her hands over an open book, feet kicking lazily in the air behind her" },
+        { id: "sleep", pt: "Dormindo enrolada", en: "curled up asleep on the bottom edge of the image like a cat, head resting on her folded arms, tail wrapped around her" },
+        { id: "laptop", pt: "No notebook", en: "sitting cross-legged on the bottom edge of the image with a small laptop on her lap, typing and glancing at the viewer" },
+        { id: "hang", pt: "Pendurada na borda de cima", en: "hanging by both hands from the top edge of the image, feet dangling, looking down at the viewer with a playful grin" }
+      ]
+    },
+
     /* ---------------------------------------------------------------- Imagem */
     format: {
       label: "Formato", name: "image format", group: "Imagem", default: "portrait",
       options: [
         { id: "portrait", pt: "Retrato 2:3 (só a personagem)", en: "Create a vertical anime illustration, 1024x1536." },
+        { id: "mascot", pt: "Mascote de desktop (corpo inteiro)", en: "Create a vertical anime illustration, 1024x1536, of a desktop mascot: the whole character is in frame from head to toe with nothing cut off, so she can sit on top of a desktop wallpaper." },
         { id: "landscape", pt: "Paisagem 3:2 (wallpaper)", en: "Create a horizontal anime illustration, 1536x1024, composed as a desktop wallpaper: the character sits in the right third of the frame and the left two-thirds stay calm and mostly empty, with room for desktop icons." },
-        { id: "square", pt: "Quadrado 1:1 (avatar)", en: "Create a square anime illustration, 1024x1024." }
+        { id: "square", pt: "Quadrado 1:1 (avatar)", en: "Create a square anime illustration, 1024x1024." },
+        // exact monitor sizes: only the local studio (API) delivers them; ChatGPT keeps its own sizes
+        { id: "wide", pt: "Wallpaper ultrawide 2560×1080", en: "Create a horizontal anime illustration, 2560x1080 (21:9 ultrawide), composed as a desktop wallpaper: the character sits in the right third of the frame and the left two-thirds stay calm and mostly empty, with room for desktop icons." },
+        { id: "fhd", pt: "Wallpaper Full HD 1920×1080", en: "Create a horizontal anime illustration, 1920x1080 (16:9), composed as a desktop wallpaper: the character sits in the right third of the frame and the left two-thirds stay calm and mostly empty, with room for desktop icons." },
+        { id: "vertical", pt: "Wallpaper vertical 1080×1920", en: "Create a vertical anime illustration, 1080x1920 (9:16), composed as a wallpaper for a vertical monitor: the character is the main subject in the lower two-thirds of the frame and the top stays calm and simple." }
       ]
     },
 
@@ -88,13 +130,17 @@ window.CATALOG = {
         { id: "transparent", pt: "Transparente (PNG)", en: "Fully transparent background (PNG), no floor shadow." },
         { id: "white", pt: "Branco liso (fácil de recortar)", en: "Plain solid white background, no shadow, no other elements." },
         { id: "tint", pt: "Cor suave lisa (tom da cor de destaque)", en: "Plain soft background in a very light tint of {{accentColor}}, no other elements." },
-        { id: "bedroom", pt: "Quarto aconchegante", en: "Background: a cozy bedroom with fairy lights and plush pillows, softly blurred and low-detail so the character stands out." },
-        { id: "cafe", pt: "Café com janela chuvosa", en: "Background: a quiet café by a rainy window, warm lamps inside, softly blurred and low-detail so the character stands out." },
-        { id: "snow", pt: "Rua com neve à noite", en: "Background: a snowy street at night with warm shop lights and gently falling snow, softly blurred and low-detail so the character stands out." },
-        { id: "rooftop", pt: "Telhado ao pôr do sol", en: "Background: a rooftop at sunset with a distant city skyline, softly blurred and low-detail so the character stands out." },
-        { id: "library", pt: "Biblioteca", en: "Background: a warm library with tall wooden bookshelves, softly blurred and low-detail so the character stands out." },
-        { id: "sakura", pt: "Parque de cerejeiras", en: "Background: a park with cherry blossom trees and drifting petals, softly blurred and low-detail so the character stands out." },
-        { id: "window", pt: "Janela com chuva", en: "Background: a wide window with rain streaks on the glass and a grey-blue city behind it, softly blurred and low-detail so the character stands out." }
+        { id: "bedroom", pt: "Quarto aconchegante", en: "Background: a cozy bedroom with fairy lights and plush pillows, {{focus.bg}}." },
+        { id: "cafe", pt: "Café com janela chuvosa", en: "Background: a quiet café by a rainy window, warm lamps inside, {{focus.bg}}." },
+        { id: "snow", pt: "Rua com neve à noite", en: "Background: a snowy street at night with warm shop lights and gently falling snow, {{focus.bg}}." },
+        { id: "rooftop", pt: "Telhado ao pôr do sol", en: "Background: a rooftop at sunset with a distant city skyline, {{focus.bg}}." },
+        { id: "library", pt: "Biblioteca", en: "Background: a warm library with tall wooden bookshelves, {{focus.bg}}." },
+        { id: "sakura", pt: "Parque de cerejeiras", en: "Background: a park with cherry blossom trees and drifting petals, {{focus.bg}}." },
+        { id: "window", pt: "Janela com chuva", en: "Background: a wide window with rain streaks on the glass and a grey-blue city behind it, {{focus.bg}}." },
+        { id: "classroom", pt: "Sala de aula à tarde", en: "Background: a Japanese school classroom in the afternoon, warm sunlight through tall windows and rows of wooden desks, {{focus.bg}}." },
+        { id: "hallway", pt: "Corredor da escola", en: "Background: a bright school hallway with tall windows and shoe lockers, {{focus.bg}}." },
+        { id: "schoolroof", pt: "Terraço da escola", en: "Background: a school rooftop with a tall green wire fence and a clear blue sky with soft clouds, {{focus.bg}}." },
+        { id: "schoolgate", pt: "Portão da escola com cerejeiras", en: "Background: a school gate lined with blooming cherry trees in spring, petals drifting, {{focus.bg}}." }
       ]
     },
 
@@ -126,6 +172,8 @@ window.CATALOG = {
     hairStyle: {
       label: "Penteado", name: "hairstyle", group: "Personagem", default: "twintails",
       options: [
+        // opens the hair part fields below instead of a ready-made hairstyle
+        { id: "build", pt: "Montar por partes", en: "{{hairShape}}, with {{list:bangs,ahoge,sidelocks,hairDye}}" },
         { id: "bob", pt: "Chanel curto", en: "a short, soft bob" },
         { id: "twintails", pt: "Maria-chiquinha curta", en: "short, fluffy twin tails" },
         { id: "longtwintails", pt: "Maria-chiquinha longa", en: "long twin tails" },
@@ -139,6 +187,90 @@ window.CATALOG = {
         { id: "halfup", pt: "Meio preso com coque", en: "a half-up style with a small bun" },
         { id: "wolf", pt: "Wolf cut", en: "a fluffy wolf cut" }
       ]
+    },
+
+    /* Hair parts, used by the "build" hairstyle. The shape reads after "hair in";
+       bangs, ahoge, side locks and dye go into a list, so they have no commas. */
+    hairShape: {
+      label: "Estilo do cabelo", name: "hair shape", group: "Personagem", default: "straight",
+      options: [
+        { id: "straight", pt: "Solto e liso", en: "a {{hairLength}}, straight style" },
+        { id: "wavy", pt: "Solto e ondulado", en: "a {{hairLength}}, softly wavy style" },
+        { id: "curly", pt: "Cacheado", en: "a {{hairLength}}, bouncy curly style" },
+        { id: "layered", pt: "Repicado e volumoso", en: "a {{hairLength}}, airy layered cut with lots of volume" },
+        { id: "messy", pt: "Bagunçado de quem acordou", en: "a {{hairLength}}, messy just-woke-up style" },
+        { id: "twintails", pt: "Maria-chiquinha", en: "{{hairLength}}, fluffy twin tails" },
+        { id: "lowtwintails", pt: "Maria-chiquinha baixa", en: "{{hairLength}} low twin tails resting on her shoulders" },
+        { id: "ponytail", pt: "Rabo de cavalo alto", en: "a {{hairLength}} high ponytail" },
+        { id: "sideponytail", pt: "Rabo de cavalo de lado", en: "a {{hairLength}} side ponytail" },
+        { id: "braids", pt: "Duas tranças", en: "two {{hairLength}} loose braids" },
+        { id: "sidebraid", pt: "Uma trança sobre o ombro", en: "a {{hairLength}} braid draped over one shoulder" },
+        { id: "buns", pt: "Dois coquinhos", en: "two small buns, with the rest of her {{hairLength}} hair hanging loose" },
+        { id: "halfup", pt: "Meio preso com coque", en: "a {{hairLength}} half-up style with a small bun" },
+        { id: "hime", pt: "Hime (corte reto)", en: "a {{hairLength}} hime cut" },
+        { id: "wolf", pt: "Wolf cut", en: "a {{hairLength}}, fluffy wolf cut" },
+        { id: "bob", pt: "Chanel curto", en: "a short, soft bob" }
+      ]
+    },
+
+    hairLength: {
+      label: "Comprimento do cabelo", name: "hair length", group: "Personagem", default: "long",
+      options: [
+        { id: "short", pt: "Curto", en: "short" },
+        { id: "shoulder", pt: "Na altura dos ombros", en: "shoulder-length" },
+        { id: "medium", pt: "Médio", en: "medium-length" },
+        { id: "long", pt: "Longo", en: "long" },
+        { id: "verylong", pt: "Muito longo", en: "very long" },
+        { id: "floor", pt: "Até o chão", en: "floor-length" }
+      ]
+    },
+
+    bangs: {
+      label: "Franja", name: "bangs", group: "Personagem", default: "wispy",
+      options: [
+        { id: "notset", pt: "Não especificar", en: "" },
+        { id: "wispy", pt: "Leve e fiapada", en: "soft wispy bangs" },
+        { id: "blunt", pt: "Reta (cortada)", en: "blunt straight-cut bangs" },
+        { id: "side", pt: "De lado", en: "side-swept bangs" },
+        { id: "curtain", pt: "Repartida no meio (cortina)", en: "curtain bangs parted in the middle" },
+        { id: "long", pt: "Longa, quase nos olhos", en: "long bangs that brush her eyelashes" },
+        { id: "nobangs", pt: "Sem franja (testa à mostra)", en: "no bangs and her forehead showing" }
+      ]
+    },
+
+    ahoge: {
+      label: "Ahoge (fio rebelde)", name: "ahoge", group: "Personagem", default: "none",
+      options: [
+        { id: "none", pt: "Nenhum", en: "" },
+        { id: "single", pt: "Um fio", en: "a single ahoge sticking up from the top of her head" },
+        { id: "double", pt: "Dois, tipo antena", en: "two ahoge sticking up like little antennae" },
+        { id: "heart", pt: "Em forma de coração", en: "an ahoge curled into a small heart shape" }
+      ]
+    },
+
+    sidelocks: {
+      label: "Mechas laterais", name: "side locks", group: "Personagem", default: "none",
+      options: [
+        { id: "none", pt: "Nada de especial", en: "" },
+        { id: "long", pt: "Longas emoldurando o rosto", en: "long side locks framing her face" },
+        { id: "braided", pt: "Uma trancinha fina", en: "one thin braided side lock" },
+        { id: "clipped", pt: "Presas com fita", en: "side locks tied with small ribbons" }
+      ]
+    },
+
+    hairDye: {
+      label: "Detalhe de cor no cabelo", name: "hair color detail", group: "Personagem", default: "none",
+      options: [
+        { id: "none", pt: "Nenhum", en: "" },
+        { id: "tips", pt: "Pontas coloridas", en: "tips that fade into {{hairDyeColor}}" },
+        { id: "inner", pt: "Mecha interna escondida", en: "a hidden inner layer dyed {{hairDyeColor}}" },
+        { id: "streak", pt: "Uma mecha na frente", en: "a single {{hairDyeColor}} streak near her face" }
+      ]
+    },
+
+    hairDyeColor: {
+      label: "Cor do detalhe", name: "hair detail color", group: "Personagem", default: "pink",
+      options: null // filled from COLORS below
     },
 
     eyeColor: {
@@ -201,7 +333,13 @@ window.CATALOG = {
         { id: "raincoat", pt: "Capa de chuva", en: "a glossy {{mainColor}} raincoat with the hood down, a {{accentColor}} sweater underneath and rubber boots" },
         { id: "office", pt: "Blusa + saia social", en: "a {{mainColor}} blouse with a soft bow at the collar, a high-waisted {{accentColor}} skirt and {{legwear}}" },
         { id: "sporty", pt: "Esportivo", en: "a zipped-up {{mainColor}} track jacket, {{accentColor}} track pants and sneakers" },
-        { id: "witch", pt: "Bruxinha", en: "a cute witch outfit: a long {{mainColor}} dress, a short cape, and a wide-brim hat with a {{accentColor}} ribbon and openings for her cat ears" }
+        { id: "witch", pt: "Bruxinha", en: "a cute witch outfit: a long {{mainColor}} dress, a short cape, and a wide-brim hat with a {{accentColor}} ribbon and openings for her cat ears" },
+        // school uniforms: skirts stay knee-length (house rule)
+        { id: "sailor", pt: "Escola: uniforme marinheiro", en: "a {{mainColor}} sailor school uniform with long sleeves, a wide collar with two white stripes, a {{accentColor}} neckerchief and a knee-length pleated skirt, with {{legwear}}" },
+        { id: "blazer", pt: "Escola: blazer + saia xadrez", en: "a school uniform: a {{mainColor}} blazer with an emblem on the chest over a white collared shirt with a {{accentColor}} ribbon tie, a knee-length plaid pleated skirt and {{legwear}}" },
+        { id: "schoolvest", pt: "Escola: colete + camisa", en: "a school uniform: a {{mainColor}} knit vest over a white short-sleeved collared shirt with a {{accentColor}} ribbon, a knee-length plaid pleated skirt and {{legwear}}" },
+        { id: "schoolcardigan", pt: "Escola: cardigã sobre a camisa", en: "a school uniform: an oversized {{mainColor}} cardigan worn properly on both shoulders, with sleeves covering half of her hands, over a white collared shirt with a {{accentColor}} ribbon, a knee-length plaid pleated skirt and {{legwear}}" },
+        { id: "gym", pt: "Escola: educação física", en: "a school gym uniform: a zipped-up {{mainColor}} track jacket with {{accentColor}} stripes down the sleeves and matching long track pants" }
       ]
     },
 
@@ -217,7 +355,11 @@ window.CATALOG = {
         { id: "summer", pt: "Vestido de verão com mangas bufantes", en: "a light {{topColor}} {{topPattern}} summer dress with a high neckline and short puffed sleeves" },
         { id: "lolita", pt: "Lolita suave", en: "a modest lolita-style {{topColor}} {{topPattern}} long-sleeved dress with lace trim and a high collar" },
         { id: "nightgown", pt: "Camisola longa de dormir", en: "a long loose {{topColor}} {{topPattern}} nightgown with long sleeves and a rounded collar" },
-        { id: "knitlong", pt: "Vestido longo de tricô", en: "a long {{topColor}} {{topPattern}} knit dress with a high neckline and long sleeves" }
+        { id: "knitlong", pt: "Vestido longo de tricô", en: "a long {{topColor}} {{topPattern}} knit dress with a high neckline and long sleeves" },
+        { id: "sailordress", pt: "Vestido marinheiro", en: "a {{topColor}} {{topPattern}} sailor dress with a wide collar and long sleeves" },
+        { id: "hoodiedress", pt: "Moletom-vestido com orelhinhas", en: "an oversized {{topColor}} {{topPattern}} hoodie dress with cat-ear details on the hood and sleeves covering her hands" },
+        { id: "apron", pt: "Vestido avental (estilo café)", en: "a long-sleeved {{topColor}} {{topPattern}} dress with a high collar under a frilly white apron" },
+        { id: "tiered", pt: "Vestido longo em camadas", en: "a long tiered {{topColor}} {{topPattern}} dress with long puffed sleeves and a rounded collar" }
       ]
     },
 
@@ -233,7 +375,12 @@ window.CATALOG = {
         { id: "shirt", pt: "Camisa de botão fechada", en: "a {{topColor}} {{topPattern}} button-up shirt buttoned all the way up with long sleeves" },
         { id: "sailor", pt: "Blusa marinheiro", en: "a {{topColor}} {{topPattern}} sailor-style blouse with a wide collar and long sleeves" },
         { id: "vest", pt: "Colete de tricô sobre camisa", en: "a {{topColor}} {{topPattern}} knit vest over a white long-sleeved collared shirt" },
-        { id: "pajamatop", pt: "Blusa de pijama", en: "a loose {{topColor}} {{topPattern}} pajama top with long sleeves and a rounded collar" }
+        { id: "pajamatop", pt: "Blusa de pijama", en: "a loose {{topColor}} {{topPattern}} pajama top with long sleeves and a rounded collar" },
+        { id: "schoolshirt", pt: "Camisa de uniforme com laço", en: "a {{topColor}} {{topPattern}} collared school shirt with a small {{accentColor}} ribbon at the neck" },
+        { id: "fleece", pt: "Blusa de fleece fofinha", en: "a fluffy {{topColor}} {{topPattern}} fleece pullover with a high zip collar" },
+        { id: "polo", pt: "Camisa polo de manga longa", en: "a {{topColor}} {{topPattern}} long-sleeved polo shirt" },
+        { id: "henley", pt: "Blusa de botãozinho (henley)", en: "a soft {{topColor}} {{topPattern}} long-sleeved henley top buttoned up to the collar" },
+        { id: "ruffle", pt: "Blusa com gola de babado", en: "a {{topColor}} {{topPattern}} blouse with a high ruffled collar and long sleeves" }
       ]
     },
 
@@ -260,7 +407,12 @@ window.CATALOG = {
         { id: "wideleg", pt: "Pantalona", en: "wide-leg {{bottomColor}} {{bottomPattern}} trousers" },
         { id: "cargo", pt: "Calça cargo", en: "loose {{bottomColor}} cargo pants" },
         { id: "sweatpants", pt: "Calça de moletom", en: "soft {{bottomColor}} sweatpants" },
-        { id: "pajamapants", pt: "Calça de pijama", en: "loose {{bottomColor}} {{bottomPattern}} pajama pants" }
+        { id: "pajamapants", pt: "Calça de pijama", en: "loose {{bottomColor}} {{bottomPattern}} pajama pants" },
+        { id: "denimskirt", pt: "Saia jeans até o joelho", en: "a knee-length {{bottomColor}} denim skirt" },
+        { id: "tieredskirt", pt: "Saia longa em camadas", en: "a long tiered {{bottomColor}} {{bottomPattern}} skirt" },
+        { id: "culottes", pt: "Pantacourt", en: "wide {{bottomColor}} {{bottomPattern}} culottes that reach below the knee" },
+        { id: "jeans", pt: "Calça jeans larga", en: "loose {{bottomColor}} jeans" },
+        { id: "overalls", pt: "Jardineira (calça)", en: "loose {{bottomColor}} denim overalls" }
       ]
     },
 
@@ -287,7 +439,12 @@ window.CATALOG = {
         { id: "raincoat", pt: "Capa de chuva", en: "a glossy {{outerColor}} raincoat with the hood down" },
         { id: "capelet", pt: "Capinha curta com laço", en: "a short {{outerColor}} capelet tied with a ribbon" },
         { id: "poncho", pt: "Poncho de tricô", en: "a cozy {{outerColor}} knit poncho" },
-        { id: "apron", pt: "Avental com babado", en: "a frilly {{outerColor}} apron" }
+        { id: "apron", pt: "Avental com babado", en: "a frilly {{outerColor}} apron" },
+        { id: "blazer", pt: "Blazer de uniforme", en: "a {{outerColor}} school blazer with an emblem on the chest" },
+        { id: "varsity", pt: "Jaqueta college", en: "a {{outerColor}} varsity jacket with cream sleeves" },
+        { id: "fleecejacket", pt: "Jaqueta de fleece", en: "a fluffy {{outerColor}} fleece jacket" },
+        { id: "haori", pt: "Haori", en: "a light {{outerColor}} haori jacket with a subtle pattern" },
+        { id: "puffer", pt: "Jaqueta puffer", en: "a puffy {{outerColor}} winter jacket with a fur-trimmed hood down" }
       ]
     },
 
@@ -307,7 +464,11 @@ window.CATALOG = {
         { id: "kneewhite", pt: "Meia branca até o joelho", en: "white knee-high socks" },
         { id: "striped", pt: "Meia listrada", en: "striped knee-high socks in {{accentColor}} and white" },
         { id: "legwarmers", pt: "Polainas", en: "slouchy {{mainColor}} leg warmers" },
-        { id: "ankle", pt: "Meia soquete", en: "short ankle socks" }
+        { id: "ankle", pt: "Meia soquete", en: "short ankle socks" },
+        { id: "kneeblack", pt: "Meia preta até o joelho", en: "black knee-high socks" },
+        { id: "thighwhite", pt: "Meia 7/8 branca", en: "white thigh-high socks" },
+        { id: "frilly", pt: "Soquete com babadinho", en: "white ankle socks with a little lace frill" },
+        { id: "pawsocks", pt: "Meia com patinhas", en: "{{accentColor}} knee-high socks with a small cat-paw print" }
       ]
     },
 
@@ -322,7 +483,10 @@ window.CATALOG = {
         { id: "ankleboots", pt: "Bota curta", en: "{{shoesColor}} ankle boots" },
         { id: "rainboots", pt: "Galocha", en: "{{shoesColor}} rubber rain boots" },
         { id: "slippers", pt: "Pantufa de gatinho", en: "fluffy {{shoesColor}} cat-face slippers" },
-        { id: "sandals", pt: "Sandália com tira", en: "{{shoesColor}} strap sandals" }
+        { id: "sandals", pt: "Sandália com tira", en: "{{shoesColor}} strap sandals" },
+        { id: "uwabaki", pt: "Sapatilha de escola (uwabaki)", en: "white indoor school slippers with {{shoesColor}} toes" },
+        { id: "canvas", pt: "Tênis de lona", en: "{{shoesColor}} canvas sneakers" },
+        { id: "platform", pt: "Sapato boneca de plataforma", en: "chunky {{shoesColor}} platform Mary Jane shoes" }
       ]
     },
 
@@ -343,27 +507,35 @@ window.CATALOG = {
       options: null // filled from COLORS below
     },
 
+    /* Multi-choice: the value is a list of ids, shown as chips, and each chosen option adds
+       its own sentence. Options with the same "slot" exclude each other (one hat, one thing
+       around the neck...): picking one takes the other off. Nothing chosen says nothing. */
     hairAccessory: {
-      label: "Acessório de cabelo", name: "hair accessory", group: "Roupa", default: "ribbons",
+      label: "Acessórios de cabelo", name: "hair accessories", group: "Roupa", default: ["ribbons"], multi: true,
       options: [
-        { id: "none", pt: "Nenhum", en: "" },
-        { id: "ribbons", pt: "Lacinhos", en: "Small {{accentColor}} ribbons tie her hair." },
-        { id: "bigbows", pt: "Laços grandes", en: "Two large {{accentColor}} bows sit in her hair." },
-        { id: "xclip", pt: "Grampo em X", en: "An X-shaped hairclip holds her bangs." },
+        { id: "ribbons", pt: "Lacinhos", slot: "bows", en: "Small {{accentColor}} ribbons tie her hair." },
+        { id: "bigbows", pt: "Laços grandes", slot: "bows", en: "Two large {{accentColor}} bows sit in her hair." },
+        { id: "xclip", pt: "Grampo em X", slot: "bangs", en: "An X-shaped hairclip holds her bangs." },
+        { id: "starpins", pt: "Presilhas de estrelinha", slot: "bangs", en: "Two small star-shaped hairpins hold her bangs to one side." },
         { id: "flower", pt: "Grampo de flor", en: "A small flower hairpin sits above one ear." },
-        { id: "beret", pt: "Boina", en: "She wears a {{accentColor}} beret tilted between her cat ears." }
+        { id: "beret", pt: "Boina", slot: "head", en: "She wears a {{accentColor}} beret tilted between her cat ears." },
+        { id: "beanie", pt: "Gorro de tricô com furos para as orelhas", slot: "head", en: "She wears a soft {{accentColor}} knit beanie with openings for her cat ears." },
+        { id: "headband", pt: "Tiara de laço", slot: "head", en: "A {{accentColor}} headband with a small bow sits in front of her cat ears." }
       ]
     },
 
     accessory: {
-      label: "Acessório", name: "accessory", group: "Roupa", default: "none",
+      label: "Acessórios", name: "accessories", group: "Roupa", default: [], multi: true,
       options: [
-        { id: "none", pt: "Nenhum", en: "" },
-        { id: "bell", pt: "Gargantilha com sininho", en: "A black choker with a small golden bell sits at her neck." },
         { id: "glasses", pt: "Óculos redondos", en: "She wears thin round glasses." },
-        { id: "headphones", pt: "Fone no pescoço", en: "Over-ear headphones rest around her neck." },
-        { id: "pawgloves", pt: "Luvinhas de patinha", en: "She wears fluffy cat-paw mittens." },
-        { id: "bag", pt: "Bolsinha de gato", en: "A small cat-shaped shoulder bag hangs at her side." }
+        { id: "bell", pt: "Gargantilha com sininho", slot: "neck", en: "A black choker with a small golden bell sits at her neck." },
+        { id: "scarf", pt: "Cachecol de tricô", slot: "neck", en: "A soft knitted {{accentColor}} scarf is wrapped loosely around her neck." },
+        { id: "headphones", pt: "Fone no pescoço", slot: "neck", en: "Over-ear headphones rest around her neck." },
+        { id: "pawgloves", pt: "Luvinhas de patinha", slot: "hands", en: "She wears fluffy cat-paw mittens." },
+        { id: "mittens", pt: "Luvas de tricô", slot: "hands", en: "She wears fluffy knitted {{accentColor}} mittens." },
+        { id: "bag", pt: "Bolsinha de gato", slot: "bag", en: "A small cat-shaped shoulder bag hangs at her side." },
+        { id: "backpack", pt: "Mochila escolar", slot: "bag", en: "A {{accentColor}} school backpack hangs from one shoulder." },
+        { id: "keychain", pt: "Bolsa com chaveiro de gatinho", slot: "bag", en: "A small school bag with a dangling cat charm hangs from her hand." }
       ]
     },
 
@@ -384,9 +556,15 @@ window.CATALOG = {
     focus: {
       label: "Destaque", name: "focus", group: "Clima e expressão", default: "face",
       options: [
-        { id: "face", pt: "Rosto, cabelo e orelhas", en: "her face, hair and ears are the center of the image. Draw the hair with soft, airy strands and gentle highlights, the eyes large and expressive, and the ears fluffy and detailed. Draw the clothing as described but render it simply, with little extra detail, so it does not compete with the face." },
-        { id: "balanced", pt: "Equilibrado", en: "the whole character reads clearly, with the face as the main point of interest and the outfit in a supporting role." },
-        { id: "outfit", pt: "Roupa em destaque", en: "the outfit is shown clearly with nice fabric folds and details, while the face stays expressive and clean." }
+        // "bg" is how a scenic background is drawn: backgrounds with scenery end in {{focus.bg}}
+        { id: "face", pt: "Rosto, cabelo e orelhas", en: "her face, hair and ears are the center of the image. Draw the hair with soft, airy strands and gentle highlights, the eyes large and expressive, and the ears fluffy and detailed. Draw the clothing as described but render it simply, with little extra detail, so it does not compete with the face.",
+          bg: "softly blurred and low-detail so the character stands out" },
+        { id: "balanced", pt: "Equilibrado", en: "the whole character reads clearly, with the face as the main point of interest and the outfit in a supporting role.",
+          bg: "softly blurred and low-detail so the character stands out" },
+        { id: "outfit", pt: "Roupa em destaque", en: "the outfit is shown clearly with nice fabric folds and details, while the face stays expressive and clean.",
+          bg: "softly blurred and low-detail so the character stands out" },
+        { id: "scenery", pt: "Cenário em destaque (fundo nítido)", en: "the scenery shares the spotlight with her: the place is drawn with care and rich, believable detail, like a background painting from an anime film, and she still reads clearly as the main character, in the same art style as the background.",
+          bg: "drawn sharp, detailed and fully in focus, with no blur and no depth-of-field effect" }
       ]
     },
 
@@ -512,6 +690,6 @@ window.CATALOG = {
   ].map(([id, pt, en]) => ({ id, pt, en }));
 
   const V = window.CATALOG.vars;
-  for (const name of ["mainColor", "accentColor", "topColor", "bottomColor", "outerColor", "shoesColor"]) V[name].options = COLORS;
+  for (const name of ["mainColor", "accentColor", "topColor", "bottomColor", "outerColor", "shoesColor", "hairDyeColor"]) V[name].options = COLORS;
   for (const name of ["topPattern", "bottomPattern"]) V[name].options = PATTERNS;
 })();
