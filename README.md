@@ -22,15 +22,22 @@ the prompt to OpenAI. Image edits also send the selected source image.
 ## Build and run
 
 Published Windows x64 packages are available on [GitHub Releases](https://github.com/Sakamoto0110/CatGirlStudio/releases).
-Extract the ZIP and run `CatgirlStudio.exe`. The `.sha256` file records the
-SHA-256 checksum for the ZIP.
+Extract a ZIP and run `CatgirlStudio.exe`. Each ZIP has a matching SHA-256 file.
 
-Build on Windows with the .NET 10 SDK. The published x64 executable requires the
-.NET 10 Desktop Runtime and includes the catalogs and app icon.
+- `CatGirlStudio-win-x64-self-contained.zip` includes the .NET Desktop Runtime.
+- `CatGirlStudio-win-x64.zip` is smaller and uses the installed .NET 10 Desktop Runtime.
+
+Build on Windows with the .NET 10 SDK. Both variants include the catalogs and app icon.
 
 ```powershell
 dotnet publish src/CatgirlStudio.App -c Release
 .\publish\CatgirlStudio.exe
+```
+
+To build the self-contained variant locally:
+
+```powershell
+dotnet publish src/CatgirlStudio.App -c Release --self-contained true -o publish/self-contained
 ```
 
 Close any running instance from the publish folder before rebuilding it. To try
@@ -70,11 +77,13 @@ to 2560×1080, 1920×1080, or 1080×1920 on save.
 
 ## Optional upscaling
 
-The app can upscale PNGs by 2×, 3×, or 4× using the separate Vulkan build of
-[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.2.5.0).
-Extract the Windows package into a `realesrgan\` folder beside the executable,
-keeping its `models\` folder. In a development checkout, the app also looks in
-`tools\bin\realesrgan-ncnn-vulkan\`.
+The app can upscale PNGs locally by 2×, 3×, or 4× using Real-ESRGAN and its
+`realesr-animevideov3` models. Both app packages use the optional
+[Real-ESRGAN Windows Vulkan ZIP](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip)
+as a separate download. Extract it into a `realesrgan\` folder beside
+`CatgirlStudio.exe`, with `realesrgan-ncnn-vulkan.exe` and the `models\` folder
+directly inside. Upscaling requires a Vulkan-capable GPU and driver. In a
+development checkout, the app also looks in `tools\bin\realesrgan-ncnn-vulkan\`.
 
 Upscaling processes color and transparency separately before merging them. TTA
 uses additional passes and takes longer. Results go in folders such as `2x` or
@@ -127,9 +136,9 @@ Get-Content (Join-Path $smoke 'report.txt')
 ## Releases
 
 GitHub Actions builds the Windows app and checks the catalogs for pushes to
-`main` and pull requests. A successful run provides a Windows x64 package.
-Push a version tag such as `v0.1.0-preview.1` to publish the package and its
-checksum as a GitHub Release. Tags with a suffix create prereleases.
+`main` and pull requests. A successful run provides both Windows x64 packages.
+Push a version tag such as `v0.1.0-preview.2` to publish both packages and their
+checksums as a GitHub Release. Tags with a suffix create prereleases.
 
 The bundled Neko app icon comes from the project's shared vD-Resources asset
 collection. Real-ESRGAN is a separate download.

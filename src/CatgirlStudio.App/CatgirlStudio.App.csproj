@@ -15,11 +15,12 @@
     <ApplicationIcon>Resources\neko-purple-light.ico</ApplicationIcon>
 
     <!--
-      dotnet publish -c Release  ->  publish\CatgirlStudio.exe, one file. Framework-dependent:
-      it uses the .NET 10 Desktop Runtime already on the machine, so the exe stays small.
+      The default publish uses the installed .NET Desktop Runtime.
+      A self-contained publish embeds the native runtime libraries in the executable.
     -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract Condition="'$(SelfContained)' == 'true'">true</IncludeNativeLibrariesForSelfExtract>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishDir>$(MSBuildThisFileDirectory)..\..\publish\</PublishDir>
   </PropertyGroup>
@@ -38,5 +39,15 @@
   <ItemGroup>
     <ProjectReference Include="..\CatgirlStudio.Core\CatgirlStudio.Core.csproj" />
   </ItemGroup>
+
+  <Target Name="CopyBundledRuntimeNotices" AfterTargets="Publish" Condition="'$(SelfContained)' == 'true'">
+    <ItemGroup>
+      <_CoreRuntimePack Include="@(ResolvedRuntimePack)" Condition="'%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.NETCore.App'" />
+      <_DesktopRuntimePack Include="@(ResolvedRuntimePack)" Condition="'%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.WindowsDesktop.App'" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_CoreRuntimePack->'%(PackageDirectory)/LICENSE.TXT')" DestinationFiles="$(PublishDir)licenses/dotnet-runtime-LICENSE.txt" />
+    <Copy SourceFiles="@(_CoreRuntimePack->'%(PackageDirectory)/THIRD-PARTY-NOTICES.TXT')" DestinationFiles="$(PublishDir)licenses/dotnet-runtime-THIRD-PARTY-NOTICES.txt" />
+    <Copy SourceFiles="@(_DesktopRuntimePack->'%(PackageDirectory)/LICENSE')" DestinationFiles="$(PublishDir)licenses/dotnet-desktop-LICENSE.txt" />
+  </Target>
 
 </Project>
