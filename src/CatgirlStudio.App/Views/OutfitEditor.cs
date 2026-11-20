@@ -48,7 +48,8 @@ internal sealed class OutfitEditor : StackPanel, ISyncView
         foreach (var (combo, current) in combos)
         {
             var id = current();
-            Ui.Select(combo, t => t switch { Piece p => p.Id == id, OptionDef o => o.Id == id, _ => false });
+            Ui.ShowPicked(combo, id);
+            Ui.Select(combo, t => t switch { Piece p => p.Id == id, OptionDef o => o.Id == id, string hex => hex == id, _ => false });
         }
         if (lockButton != null) lockButton.IsChecked = wb.Locks.Contains(OutfitEngine.Var);
         syncing = false;
@@ -100,12 +101,16 @@ internal sealed class OutfitEditor : StackPanel, ISyncView
                 continue;
             }
             if (!prop.Editable) continue;
-            var combo = prop.Def.IsColor ? Ui.ColorCombo(prop.Options) : Ui.Combo(prop.Options, o => ((OptionDef)o).Pt);
+            var combo = prop.Def.IsColor ? Ui.ColorCombo(prop.Options, picker: OutfitEngine.AcceptsHex(prop)) : Ui.Combo(prop.Options, o => ((OptionDef)o).Pt);
             CharacterSheet.PassWheel(combo);
             var key = $"outfit.{slotId}.{prop.Key}";
             combo.SelectionChanged += (_, _) =>
             {
-                if (!syncing && combo.SelectedItem is ComboBoxItem { Tag: OptionDef o }) wb.SetOutfit(key, o.Id);
+                if (syncing || combo.SelectedItem is not ComboBoxItem item) return;
+                if (item.Tag is OptionDef o) wb.SetOutfit(key, o.Id);
+                else if (item.Tag == Ui.PickColor)
+                    Ui.PickInto(combo, $"{state.Slot.Pt}: {prop.Def.Label.ToLowerInvariant()}", Ui.HexOf(prop.Options, Outfit.PropValue(slotId, prop, wb.Sel)),
+                        hex => wb.SetOutfit(key, hex), Sync);
             };
             combos.Add((combo, () => Outfit.PropValue(slotId, prop, wb.Sel)));
             panel.Children.Add(Line(prop.Def.Label, combo, header: false));

@@ -36,6 +36,9 @@ public sealed class VarDef
     /// <summary>Default option ids (multi-choice variables).</summary>
     public IReadOnlyList<string> DefaultMany { get; init; } = [];
     public required IReadOnlyList<OptionDef> Options { get; init; }
+    /// <summary>A color: its options carry a "hex" swatch and it also takes a picked "#RRGGBB"
+    /// (the shared colors list, or "picker": true).</summary>
+    public bool IsColor { get; init; }
 
     public OptionDef? Find(string? id) => id is null ? null : Options.FirstOrDefault(o => o.Id == id);
 }
@@ -94,7 +97,9 @@ public sealed class Catalog
                 Multi = multi,
                 Default = def.ValueKind == JsonValueKind.String ? def.GetString() : null,
                 DefaultMany = def.ValueKind == JsonValueKind.Array ? def.EnumerateArray().Select(e => e.GetString()!).ToList() : [],
-                Options = options
+                Options = options,
+                IsColor = !multi && ((optEl.ValueKind == JsonValueKind.String && optEl.GetString() == "colors")
+                    || (d.TryGetProperty("picker", out var pk) && pk.ValueKind == JsonValueKind.True))
             };
         }
 

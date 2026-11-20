@@ -5,8 +5,8 @@ using CatgirlStudio.Core;
 
 namespace CatgirlStudio.App;
 
-/// <summary>A saved favorite: a name and a selection.</summary>
-internal sealed record Favorite(string Name, Selection Selection, DateTimeOffset At);
+/// <summary>A saved favorite: a name, a selection and, when it was typed by hand, the prompt.</summary>
+internal sealed record Favorite(string Name, Selection Selection, DateTimeOffset At, string? ManualPrompt = null);
 
 /// <summary>
 /// Everything the page keeps in app.js, without UI: the selection, locked fields, the base
@@ -32,6 +32,17 @@ internal sealed class Workbench
     public Selection? Baseline { get; private set; }
     public BuildResult Result { get; private set; }
     public List<Favorite> Favorites { get; } = [];
+
+    /// <summary>The prompt as edited by hand, or null while the built one is used.</summary>
+    public string? ManualPrompt { get; private set; }
+    // the built prompt when the hand edit started: if it differs now, fields changed after the edit
+    string? manualBase;
+
+    /// <summary>The prompt that copy, open and generate use: the hand-edited one, or the built one.</summary>
+    public string PromptText => ManualPrompt ?? Result.Text;
+
+    /// <summary>Fields changed after the prompt was edited by hand (the edited text does not follow them).</summary>
+    public bool ManualOutdated => ManualPrompt is not null && manualBase != Result.Text;
 
     /// <summary>Raised after any change to the selection, locks or baseline.</summary>
     public event Action? Changed;
@@ -84,6 +95,29 @@ internal sealed class Workbench
         Sel.Values[key] = value;
         Update();
     }
+
+    /// <summary>The prompt typed by hand. Typing it back to the built text drops the edit.</summary>
+    public void EditPrompt(string text)
+    {
+        if (text == Result.Text) DropManual();
+        else
+        {
+            if (ManualPrompt is null) manualBase = Result.Text;
+            ManualPrompt = text;
+        }
+        Save();
+        Changed?.Invoke();
+    }
+
+    /// <summary>Back to the prompt built from the fields.</summary>
+    public void UseBuiltPrompt()
+    {
+        DropManual();
+        Save();
+        Changed?.Invoke();
+    }
+
+    void DropManual() => (ManualPrompt, manualBase) = (null, null);
 
     public void SetCustom(string name, string text)
     {
@@ -163,13 +197,17 @@ internal sealed class Workbench
     public void Reset()
     {
         Locks.Clear();
+        DropManual();
         Sel = Engine.DefaultSelection();
         ApplyPrefabDefaults(Prefab);
         Update();
     }
 
-    public void LoadSelection(Selection s)
+    /// <summary>Loads a saved selection (favorite, image). A hand-edited prompt saved with it comes
+    /// back too; otherwise the prompt goes back to the built one.</summary>
+    public void LoadSelection(Selection s, string? manualPrompt = null)
     {
+        DropManual();
         var next = Engine.DefaultSelection(Engine.FindPrefab(s.PrefabId).Id);
         // the outfit starts from its defaults: a property the saved selection left at its
         // default (and so did not store) must not keep the value picked since
@@ -180,6 +218,8 @@ internal sealed class Workbench
         next.Custom.Clear();
         foreach (var (k, v) in s.Custom) next.Custom[k] = v;
         Sel = next;
+        Result = Engine.Build(Sel);
+        if (manualPrompt is not null && manualPrompt != Result.Text) (ManualPrompt, manualBase) = (manualPrompt, Result.Text);
         Update();
     }
 
@@ -199,7 +239,7 @@ internal sealed class Workbench
     public void SaveFavorite(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) name = Prefab.Name + " " + DateTime.Now.ToString("dd/MM/yyyy");
-        Favorites.Insert(0, new Favorite(name.Trim(), Sel.Clone(), DateTimeOffset.Now));
+        Favorites.Insert(0, new Favorite(name.Trim(), Sel.Clone(), DateTimeOffset.Now, ManualPrompt));
         if (Favorites.Count > MaxFavorites) Favorites.RemoveRange(MaxFavorites, Favorites.Count - MaxFavorites);
         SaveFavorites();
         Changed?.Invoke();
@@ -226,6 +266,11 @@ internal sealed class Workbench
                 if (root.TryGetProperty("locks", out var locks))
                     foreach (var l in locks.EnumerateArray()) if (l.GetString() is { } n && Catalog.Vars.ContainsKey(n)) Locks.Add(n);
                 if (root.TryGetProperty("baseline", out var b) && b.ValueKind == JsonValueKind.Object) Baseline = Selection.FromJson(b, Engine);
+                if (root.TryGetProperty("manualPrompt", out var mp) && mp.ValueKind == JsonValueKind.String)
+                {
+                    ManualPrompt = mp.GetString();
+                    manualBase = root.TryGetProperty("manualBase", out var mb) && mb.ValueKind == JsonValueKind.String ? mb.GetString() : null;
+                }
             }
             else ApplyPrefabDefaults(Prefab);
         }
@@ -242,7 +287,8 @@ internal sealed class Workbench
                     Favorites.Add(new Favorite(
                         f.GetProperty("name").GetString() ?? "",
                         Selection.FromJson(f.GetProperty("selection"), Engine),
-                        f.TryGetProperty("at", out var at) && at.TryGetDateTimeOffset(out var when) ? when : DateTimeOffset.Now));
+                        f.TryGetProperty("at", out var at) && at.TryGetDateTimeOffset(out var when) ? when : DateTimeOffset.Now,
+                        f.TryGetProperty("prompt", out var fp) && fp.ValueKind == JsonValueKind.String ? fp.GetString() : null));
             }
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or KeyNotFoundException)
@@ -265,7 +311,9 @@ internal sealed class Workbench
         {
             ["selection"] = Sel.ToJson(),
             ["locks"] = new JsonArray(Locks.Select(l => (JsonNode)JsonValue.Create(l)).ToArray()),
-            ["baseline"] = Baseline?.ToJson()
+            ["baseline"] = Baseline?.ToJson(),
+            ["manualPrompt"] = ManualPrompt,
+            ["manualBase"] = manualBase
         };
         Write(StateFile, state.ToJsonString(Pretty));
     }
@@ -276,7 +324,8 @@ internal sealed class Workbench
         {
             ["name"] = f.Name,
             ["selection"] = f.Selection.ToJson(),
-            ["at"] = f.At.ToString("o")
+            ["at"] = f.At.ToString("o"),
+            ["prompt"] = f.ManualPrompt
         }).ToArray());
         Write(FavoritesFile, list.ToJsonString(Pretty));
     }

@@ -127,20 +127,13 @@ internal sealed class StudioPanel : UserControl
                 Child = new TextBlock { Text = "modo de teste", FontSize = 11, Foreground = Ui.Res<Brush>("Accent") }
             });
 
-        var grid = new Grid();
-        var rows = new (UIElement El, GridLength H)[]
-        {
+        // the image above, the recent ones below; the line between them drags
+        var star = new GridLength(1, GridUnitType.Star);
+        var top = Ui.Rows(
             (title, GridLength.Auto), (options, GridLength.Auto), (generate, GridLength.Auto), (message, GridLength.Auto),
-            (frame, new GridLength(1, GridUnitType.Star)), (caption, GridLength.Auto), (captionActions, GridLength.Auto), (upscaleBar, GridLength.Auto),
-            (Ui.Text("Geradas recentemente", "H2", new Thickness(0, 12, 0, 0)), GridLength.Auto), (thumbsScroll, new GridLength(236))
-        };
-        for (var i = 0; i < rows.Length; i++)
-        {
-            grid.RowDefinitions.Add(new RowDefinition { Height = rows[i].H });
-            Grid.SetRow(rows[i].El, i);
-            grid.Children.Add(rows[i].El);
-        }
-        Content = grid;
+            (frame, star), (caption, GridLength.Auto), (captionActions, GridLength.Auto), (upscaleBar, GridLength.Auto));
+        var bottom = Ui.Rows((Ui.Text("Geradas recentemente", "H2"), GridLength.Auto), (thumbsScroll, star));
+        Content = Layout.SplitRows("studioSplit", top, bottom, defaultTop: 0.72, minTop: 360, minBottom: 130);
 
         promptPanel.ApplyButton.Click += async (_, _) => await ApplyEdit();
         ticker.Tick += (_, _) => tick?.Invoke();
@@ -198,27 +191,29 @@ internal sealed class StudioPanel : UserControl
         if (busy) return;
         var snap = wb.Sel.Clone();
         var fmt = FormatNow;
+        var handEdited = wb.ManualPrompt is not null;
         var body = new JsonObject
         {
             ["model"] = Chosen(model),
-            ["prompt"] = wb.Result.Text,
+            ["prompt"] = wb.PromptText,
             ["size"] = Pricing.Sizes[fmt],
             ["quality"] = Chosen(quality),
             ["background"] = snap.Values.GetValueOrDefault("background") == "transparent" ? "transparent" : "opaque",
             ["output_format"] = "png",
             ["n"] = int.Parse(Chosen(count))
         };
-        await Run("Gerando", "generations", body, "generate", snap, null, Pricing.Crops.TryGetValue(fmt, out var c) ? c : null);
+        await Run("Gerando", "generations", body, "generate", snap, null, Pricing.Crops.TryGetValue(fmt, out var c) ? c : null, handEdited);
     }
 
     internal async Task ApplyEdit()
     {
         if (busy) return;
         if (current is null) { Say("Gere ou escolha uma imagem primeiro.", error: true); return; }
-        var req = wb.EditRequest();
-        if (req.Text.Length == 0) { Say("Nada mudou desde esta imagem: troque alguma opção primeiro.", error: true); return; }
+        // the request as it reads in the quick-edit box, which may have been edited by hand
+        var req = promptPanel.EditText;
+        if (req.Length == 0) { Say("Nada mudou desde esta imagem: troque alguma opção primeiro.", error: true); return; }
         const string Lead = "Edit the last image.";
-        var prompt = req.Text.StartsWith(Lead) ? "Edit this image." + req.Text[Lead.Length..] : req.Text;
+        var prompt = req.StartsWith(Lead) ? "Edit this image." + req[Lead.Length..] : req;
         var body = new JsonObject
         {
             ["model"] = Chosen(model),
@@ -233,7 +228,7 @@ internal sealed class StudioPanel : UserControl
         await Run("Ajustando", "edits", body, "edit", wb.Sel.Clone(), current.Id, current.Crop);
     }
 
-    async Task Run(string label, string endpoint, JsonObject body, string kind, Selection snap, string? parent, (int W, int H)? crop)
+    async Task Run(string label, string endpoint, JsonObject body, string kind, Selection snap, string? parent, (int W, int H)? crop, bool handEdited = false)
     {
         busy = true;
         RefreshLabels();
@@ -259,6 +254,7 @@ internal sealed class StudioPanel : UserControl
                     ["size"] = body["size"]!.GetValue<string>(),
                     ["background"] = body["background"]!.GetValue<string>(),
                     ["prompt"] = body["prompt"]!.GetValue<string>(),
+                    ["handEdited"] = handEdited ? true : null, // the prompt was typed by hand, not built from the selection
                     ["selection"] = snap.ToJson(),
                     ["parent"] = parent,
                     ["costUsd"] = each,
@@ -381,11 +377,11 @@ internal sealed class StudioPanel : UserControl
         if (img.Selection is JsonNode sel)
         {
             using var doc = JsonDocument.Parse(sel.ToJsonString());
-            wb.LoadSelection(Selection.FromJson(doc.RootElement, wb.Engine));
+            wb.LoadSelection(Selection.FromJson(doc.RootElement, wb.Engine), img.HandEdited ? img.Prompt : null);
             wb.MarkSent();
         }
         SetCurrent(img);
-        Say("Imagem escolhida. Os campos voltaram para como ela foi feita; mude algo e use o Ajuste rápido.");
+        Say("Imagem escolhida. Os campos voltaram para como ela foi feita" + (img.HandEdited ? ", e o prompt editado à mão também" : "") + "; mude algo e use o Ajuste rápido.");
     }
 
     void SetCurrent(StoredImage? img)

@@ -30,7 +30,6 @@ var outfit = new OutfitEngine(catalog, outfitsJson);
 var engine = new PromptEngine(catalog, outfit);
 var glitch = new Regex(@"\s[.,]|\.\.|,,|, ,| {2}|\b(?:and|with)[.,]||\{\{|\{[A-Za-z]+\}");
 bool Bad(string text) => text.Split('\n').Any(glitch.IsMatch);
-
 Selection Base(Prefab p)
 {
     var s = engine.DefaultSelection(p.Id);
@@ -121,7 +120,10 @@ foreach (var mode in outfit.Modes)
             s.Values["outfit." + slotId] = piece.Id;
             var where = $"outfit {mode.Id}/{slotId}={piece.Id}";
             if (!outfit.State(s).Any(x => x.Piece.Id == piece.Id && x.Slot.Id == slotId)) { problems.Add($"{where}: does not show up"); continue; }
-            if (Bad(engine.Build(s).Text)) problems.Add($"{where}: placeholder or spacing glitch");
+            var built = engine.Build(s).Text;
+            if (Bad(built)) problems.Add($"{where}: placeholder or spacing glitch");
+            var rule = outfit.State(s).Any(x => x.Piece.Relaxed) ? "relaxed" : "default";
+            if (!built.Contains(outfit.Modesty[rule])) problems.Add($"{where}: the prompt does not carry the {rule} modesty rule");
             foreach (var p in piece.Props)
                 foreach (var o in p.Options)
                 {
@@ -149,11 +151,66 @@ foreach (var slot in outfit.Slots.Values)
         if (piece.Theme is not null && !themes.Contains(piece.Theme)) problems.Add($"{where}: unknown theme {piece.Theme}");
     }
 
+// Optional layers stay absent by default and selected styles reach the composed prompt.
+var layered = Base(catalog.Prefabs[0]);
+layered.Values["outfit.mode"] = "pieces";
+if (outfit.PieceIn("underTop", layered).Id != "none" || outfit.PieceIn("underBottom", layered).Id != "none")
+    problems.Add("optional undergarment layers must be unspecified by default");
+layered.Values["outfit.underTop"] = "bralette";
+layered.Values["outfit.underBottom"] = "boyshorts";
+layered.Values["outfit.underTop.color"] = "pink";
+var layeredText = engine.Build(layered).Text;
+if (!layeredText.Contains("bralette under her top") || !layeredText.Contains("boyshort underwear under her clothing"))
+    problems.Add("selected undergarment layers do not reach the prompt");
+if (!engine.Normalize("outfit.underTop", "bralette", layered) || !engine.Normalize("outfit.underBottom", "boyshorts", layered))
+    problems.Add("undergarment selections cannot be restored");
+layered.Values["outfit.top"] = "none";
+var visibleBraText = engine.Build(layered).Text;
+if (!visibleBraText.Contains("bralette") || !visibleBraText.Contains("no shirt or blouse") || visibleBraText.Contains("bralette under her top"))
+    problems.Add("visible bra should not be described under a top");
+layered.Values["outfit.underTop"] = "none";
+if (outfit.PieceIn("underTop", layered).Id != "softbra" || !engine.Build(layered).Text.Contains("cotton bra"))
+    problems.Add("a basic bra should be selected when the top and bra are unspecified");
+layered.Values["outfit.underTop"] = "bralette";
+layered.Values["outfit.bottom"] = "jeans";
+layered.Values["outfit.top"] = "nightgowncami";
+var nightgownSlots = outfit.State(layered).Select(x => x.Slot.Id).ToHashSet();
+var nightgownText = engine.Build(layered).Text;
+if (nightgownSlots.Contains("bottom") || !nightgownSlots.Contains("legs") ||
+    !nightgownText.Contains("nightgown") || !nightgownText.Contains("boyshort underwear under her clothing"))
+    problems.Add("nightgown should replace the bottom while keeping undergarments and legwear available");
+layered.Values["outfit.top"] = "nightgownlong";
+if (outfit.State(layered).Any(x => x.Slot.Id == "legs"))
+    problems.Add("long nightgown should hide legwear");
+layered.Values["outfit.top"] = "tshirt";
+if (outfit.PieceIn("bottom", layered).Id != "jeans" || !outfit.State(layered).Any(x => x.Slot.Id == "bottom"))
+    problems.Add("switching away from a nightgown should restore the selected bottom");
+
+// picked colors: every color field and color property takes "#RRGGBB" and reads "name (#HEX)"
+foreach (var mode in outfit.Modes)
+{
+    var s = Base(catalog.Prefabs[0]);
+    s.Values["outfit.mode"] = mode.Id;
+    foreach (var v in catalog.Vars.Values.Where(v => v.IsColor))
+        if (!engine.Normalize(v.Key, "#7fb3d5", s)) problems.Add($"var {v.Key}: does not take a picked color");
+    foreach (var state in outfit.State(s))
+        foreach (var p in state.Props.Where(OutfitEngine.AcceptsHex))
+            if (!engine.Normalize($"outfit.{state.Slot.Id}.{p.Key}", "#c8a2c8", s)) problems.Add($"outfit {state.Slot.Id}.{p.Key}: does not take a picked color");
+    var text = engine.Build(s).Text;
+    if (Bad(text)) problems.Add($"picked colors in {mode.Id}: placeholder or spacing glitch");
+    if (!text.Contains("(#7FB3D5)") || !text.Contains("(#C8A2C8)")) problems.Add($"picked colors in {mode.Id}: the hex does not reach the prompt");
+}
+foreach (var c in catalog.Vars.Values.Where(v => v.IsColor).SelectMany(v => v.Options))
+    if (!ColorWords.IsHex(c.Field("hex"))) problems.Add($"color {c.Id}: no \"hex\" swatch");
+
 Console.WriteLine($"prefabs: {catalog.Prefabs.Count} | variables: {catalog.Vars.Count} | outfit pieces: {outfit.Slots.Values.Sum(s => s.Pieces.Count)} | prompt length {lengths.Min()}-{lengths.Max()} chars");
 Console.WriteLine($"problems: {problems.Count}");
 foreach (var p in problems.Distinct()) Console.WriteLine("  - " + p);
 if (args.Contains("--show")) Console.WriteLine("\n=== sample (" + catalog.Prefabs[0].Id + ") ===\n" + engine.Build(Base(catalog.Prefabs[0])).Text);
 if (args.Contains("--compare-web")) CompareWeb();
+if (args.Contains("--colors")) // how the picker would name each swatch, next to the catalog's own name
+    foreach (var c in catalog.Vars.Values.Where(v => v.IsColor).SelectMany(v => v.Options).DistinctBy(c => c.Field("hex")))
+        Console.WriteLine($"  {c.Field("hex")}  {c.En,-42} -> {ColorWords.Name(c.Field("hex")!)}");
 return problems.Count > 0 ? 1 : 0;
 
 // The web page (web/) is frozen on the catalog from before the outfit engine. For the same old

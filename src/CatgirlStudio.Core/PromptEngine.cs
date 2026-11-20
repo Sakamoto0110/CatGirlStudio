@@ -88,6 +88,11 @@ public sealed partial class PromptEngine
             into.Lists[name] = list.Where(id => def.Find(id) is not null).Distinct().ToList();
             return true;
         }
+        if (raw is string hex && def.IsColor && ColorWords.IsHex(hex))
+        {
+            into.Values[name] = ColorWords.Canonical(hex); // a color picked by hand
+            return true;
+        }
         if (raw is not string value || (value != Custom && def.Find(value) is null)) return false;
         into.Values[name] = value;
         return true;
@@ -112,6 +117,7 @@ public sealed partial class PromptEngine
         }
         var value = s.Values.GetValueOrDefault(name);
         if (value == Custom) return (s.Custom.GetValueOrDefault(name) ?? "").Trim();
+        if (def.IsColor && ColorWords.IsHex(value)) return ColorWords.Phrase(value!);
         var opt = def.Find(value) ?? def.Find(def.Default);
         return opt?.En ?? "";
     }
@@ -155,7 +161,7 @@ public sealed partial class PromptEngine
             if (Catalog.Blocks.TryGetValue(name, out var block)) return Expand(block, s, used, depth + 1);
             if (Provided(name))
             {
-                used?.Add(name);
+                if (Provider!.IsField(name)) used?.Add(name);
                 var p = Expand(Provider!.Text(name, s), s, used, depth + 1);
                 return p.Trim().Length > 0 ? p : Empty;
             }

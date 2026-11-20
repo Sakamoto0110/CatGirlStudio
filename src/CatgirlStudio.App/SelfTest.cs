@@ -31,6 +31,21 @@ internal static class SelfTest
             wb.SetOutfit("outfit.bottom", "pleatedstripe");
             wb.SetOutfit("outfit.legs", "thighstripe");
             log.Add("striped skirt + socks -> wears: " + Wears());
+            // at home: a cropped top switches the modesty rule, a regular one switches it back
+            string Rule() => wb.Result.Text.Split('\n').First(l => l.Contains("non-revealing") || l.Contains("homewear"));
+            wb.SetOutfit("outfit.top", "croptee");
+            wb.SetOutfit("outfit.bottom", "highwaist");
+            log.Add("cropped tee + sweatpants -> wears: " + Wears());
+            log.Add("  rule: " + Rule());
+            wb.SetOutfit("outfit.top", "hoodie");
+            log.Add("back to the hoodie -> rule: " + Rule() + " | fields counted: " + wb.Result.Used.Count + ", modesty is a field: " + wb.Result.Used.Contains(OutfitEngine.ModestyVar));
+            wb.SetOutfit("outfit.mode", "ready");
+            wb.SetOutfit("outfit.full", "cropjamas");
+            log.Add("ready cropjamas -> wears: " + Wears() + " | socks slot: " + wb.Outfit.State(wb.Sel).Any(s => s.Slot.Id == "legs"));
+            log.Add("  rule: " + Rule());
+            wb.SetOutfit("outfit.mode", "pieces");
+            wb.SetOutfit("outfit.bottom", "pleatedstripe");
+            wb.SetOutfit("outfit.legs", "thighstripe");
             wb.SetValue("theme", "idol");
             wb.SetOutfit("outfit.mode", "ready");
             log.Add("idol style offers: " + string.Join(",", wb.Outfit.Offered("full", wb.Sel).Where(p => p.Theme != null).Select(p => p.Id)));
@@ -81,6 +96,62 @@ internal static class SelfTest
                 }
             }
             else log.Add("upscale -> skipped (Real-ESRGAN not found)");
+
+            for (var i = 0; i < 20; i++) wb.RandomizeAll(); // must not trip over the modesty placeholder
+            log.Add("roll everything 20 times -> ok");
+
+            // picked colors: "name (#HEX)" in the prompt, named in the quick edit, kept by a favorite
+            wb.SelectPrefab("mascote");
+            wb.SetOutfit("outfit.mode", "pieces");
+            wb.SetOutfit("outfit.top", "hoodie");
+            wb.SetValue("accentColor", "teal");
+            wb.MarkSent();
+            wb.SetOutfit("outfit.top.color", "#C8A2C8");
+            wb.SetValue("hairColor", "#7FB3D5");
+            log.Add("picked colors -> wears: " + Wears());
+            log.Add("  character: " + wb.Result.Text.Split('\n').First(l => l.StartsWith("An adult")).Split(". ")[0]);
+            log.Add("  edit: " + wb.EditRequest().Text.Split('\n').Where(l => l.StartsWith("- ")).Aggregate((a, b) => a + " / " + b));
+            wb.SaveFavorite("cores escolhidas");
+            wb.SetValue("hairColor", "black");
+            wb.LoadSelection(wb.Favorites[0].Selection);
+            log.Add("  favorite back -> hair " + wb.Sel.Values["hairColor"] + ", top " + wb.Sel.Values["outfit.top.color"]);
+            wb.DeleteFavorite(wb.Favorites[0]);
+
+            // hand-edited prompt: generate sends it, a field change marks it outdated, the image brings it back
+            const string Extra = "Extra: a tiny star sticker on her cheek.";
+            wb.EditPrompt(wb.Result.Text + "\n\n" + Extra);
+            log.Add("hand edit -> manual: " + (wb.ManualPrompt != null) + ", outdated: " + wb.ManualOutdated);
+            await st.Generate();
+            var edited = st.Current!;
+            log.Add("  generated with it: " + edited.Prompt.EndsWith(Extra) + ", marked hand-edited: " + edited.HandEdited);
+            wb.SetValue("eyeColor", "red");
+            log.Add("  eyes changed -> outdated: " + wb.ManualOutdated + ", still the edited text: " + wb.PromptText.EndsWith(Extra));
+            wb.UseBuiltPrompt();
+            log.Add("  back to built -> manual: " + (wb.ManualPrompt != null) + ", red eyes in it: " + wb.PromptText.Contains("crimson"));
+            st.Pick(edited);
+            log.Add("  picked that image -> edited text back: " + (wb.ManualPrompt == edited.Prompt) + ", outdated: " + wb.ManualOutdated);
+            wb.UseBuiltPrompt();
+            wb.EditPrompt(wb.Result.Text); // typing it back to the built text is no edit at all
+            log.Add("  typed back to the built text -> manual: " + (wb.ManualPrompt != null));
+
+            // a hand edit of the quick-edit request is what gets applied
+            wb.SetValue("eyeColor", wb.Sel.Values["eyeColor"] == "amber" ? "violet" : "amber"); // always a change, whatever the dice left
+            log.Add("  baseline eyes " + wb.Baseline?.Values.GetValueOrDefault("eyeColor") + ", now " + wb.Sel.Values["eyeColor"] + ", request length " + wb.EditRequest().Text.Length);
+            window.Prompt.TypeEdit(wb.EditRequest().Text.Replace("Do not change anything else.", "- eye shine: add a small heart-shaped highlight\nDo not change anything else."));
+            await st.ApplyEdit();
+            log.Add("  applied hand-edited request -> " + st.Current!.Prompt.Contains("heart-shaped highlight") + " | " + st.Message + " | box: " + window.Prompt.EditText.Replace("\n", " / "));
+
+            // layout: a wide window splits the character sheet in two blocks
+            log.Add("window " + (int)window.ActualWidth + " px -> two blocks: " + window.Sheet.TwoBlocks);
+            window.Width = 2400;
+            await Task.Delay(700);
+            log.Add("window " + (int)window.ActualWidth + " px -> two blocks: " + window.Sheet.TwoBlocks);
+            App.Snap(window, report + "-wide.png");
+            var picker = Views.ColorPicker.ForTest(window, "#C8A2C8");
+            picker.Show();
+            await Task.Delay(500);
+            App.Snap(picker, report + "-picker.png");
+            picker.Close();
         }
         catch (Exception e)
         {

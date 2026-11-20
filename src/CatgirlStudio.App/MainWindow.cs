@@ -16,6 +16,8 @@ internal sealed class MainWindow : Window
     // for the --selftest run
     internal Workbench Bench => wb;
     internal StudioPanel Studio { get; }
+    internal CharacterSheet Sheet { get; }
+    internal PromptPanel Prompt { get; }
 
     public MainWindow(Workbench wb, IImageApi api, ImageStore store)
     {
@@ -54,17 +56,33 @@ internal sealed class MainWindow : Window
         DockPanel.SetDock(actions, Dock.Right);
         top.Children.Add(actions);
 
-        var prompt = new PromptPanel(wb);
+        var prompt = Prompt = new PromptPanel(wb);
         Studio = new StudioPanel(wb, api, store, prompt);
-        var grid = new Grid { Margin = new Thickness(20, 0, 20, 20) };
-        foreach (var w in new[] { new GridLength(280), new GridLength(1, GridUnitType.Star), new GridLength(450), new GridLength(470) })
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = w });
-        var cards = new UIElement[] { new PoseShelf(wb), new CharacterSheet(wb), prompt, Studio };
+
+        // four cards with draggable gaps between them; the character sheet takes what is left
+        var grid = new Grid { Margin = new Thickness(26, 6, 26, 26) };
+        Sheet = new CharacterSheet(wb);
+        var cards = new UIElement[] { new PoseShelf(wb), Sheet, prompt, Studio };
         for (var i = 0; i < cards.Length; i++)
         {
+            if (i > 0)
+            {
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+                var splitter = Layout.Splitter(betweenColumns: true, SaveColumns);
+                splitter.MouseDoubleClick += (_, _) => ResetColumns();
+                Grid.SetColumn(splitter, grid.ColumnDefinitions.Count - 1);
+                grid.Children.Add(splitter);
+            }
+            var column = Columns[i];
+            var def = new ColumnDefinition
+            {
+                Width = column.Default is { } px ? new GridLength(Layout.Get(column.Key, px, column.Min, column.Max)) : new GridLength(1, GridUnitType.Star),
+                MinWidth = column.Min
+            };
+            grid.ColumnDefinitions.Add(def);
+            columns.Add(def);
             var card = Ui.Card(cards[i]);
-            card.Margin = new Thickness(6);
-            Grid.SetColumn(card, i);
+            Grid.SetColumn(card, grid.ColumnDefinitions.Count - 1);
             grid.Children.Add(card);
         }
 
@@ -74,6 +92,22 @@ internal sealed class MainWindow : Window
         root.Children.Add(grid);
         Content = root;
         SourceInitialized += (_, _) => ThemeColors.DarkTitleBar(this);
+    }
+
+    // poses | character sheet (takes the rest) | prompt | image
+    static readonly (string Key, double? Default, double Min, double Max)[] Columns =
+    [
+        ("poses", 268, 220, 520), ("sheet", null, 440, double.PositiveInfinity), ("prompt", 438, 340, 1000), ("studio", 458, 360, 1100)
+    ];
+    readonly List<ColumnDefinition> columns = [];
+
+    void SaveColumns() => Layout.Set(Columns.Select((c, i) => (c.Key, columns[i].ActualWidth)).Where((_, i) => Columns[i].Default is not null).ToArray());
+
+    void ResetColumns()
+    {
+        for (var i = 0; i < Columns.Length; i++)
+            if (Columns[i].Default is { } px) columns[i].Width = new GridLength(px);
+        SaveColumns();
     }
 
     void Reset()

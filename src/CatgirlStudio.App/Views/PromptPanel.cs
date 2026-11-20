@@ -18,10 +18,16 @@ internal sealed class PromptPanel : UserControl
     readonly Workbench wb;
     readonly TextBlock count = Ui.Text("", "Small", new Thickness(10, 5, 0, 0));
     readonly TextBlock tags = Ui.Text("", "Small", new Thickness(0, 4, 0, 10));
-    readonly TextBox prompt = new() { IsEnabled = true, Style = Ui.Style("Code") };
+    // both texts can be edited by hand (Code is read-only by default)
+    readonly TextBox prompt = new() { Style = Ui.Style("Code"), IsReadOnly = false, AcceptsReturn = true };
+    readonly DockPanel manualBar = new() { Margin = new Thickness(0, 8, 0, 0) };
+    readonly TextBlock manualNote = Ui.Text("", "Small");
+    bool rendering;
+    string lastBuiltEdit = "";
     readonly TextBlock status = Ui.Text("", "Small", new Thickness(0, 0, 0, 4));
     readonly TextBlock editHint = Ui.Text("", "Small", new Thickness(0, 2, 0, 8));
-    readonly TextBox edit = new() { Style = Ui.Style("Code"), Height = 150 };
+    readonly TextBox edit = new() { Style = Ui.Style("Code"), IsReadOnly = false, AcceptsReturn = true, MinHeight = 70 };
+    RowDefinition? editRow;
     readonly WrapPanel editActions = new() { Margin = new Thickness(0, 10, 0, 0) };
     readonly TextBox favName = Ui.Input("Nome da combinação");
     readonly ListBox favs = new();
@@ -29,6 +35,12 @@ internal sealed class PromptPanel : UserControl
 
     /// <summary>"Aplicar nesta imagem": the studio panel wires and labels it.</summary>
     public Button ApplyButton { get; } = Ui.IconTextButton(Ui.IconSparkle, "Aplicar nesta imagem", primary: true);
+
+    /// <summary>The quick-edit request as it reads in the box (edited by hand or not).</summary>
+    public string EditText => edit.Visibility == Visibility.Visible ? edit.Text.Trim() : "";
+
+    /// <summary>For the self-test: types into the quick-edit box.</summary>
+    internal void TypeEdit(string text) => edit.Text = text;
 
     public PromptPanel(Workbench wb)
     {
@@ -43,11 +55,23 @@ internal sealed class PromptPanel : UserControl
         head.Children.Add(count);
 
         var actions = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
-        actions.Children.Add(Ui.IconTextButton(Ui.IconCopy, "Copiar prompt", primary: true, (_, _) => Copy(wb.Result.Text, "Prompt copiado. Cole no ChatGPT.")));
+        actions.Children.Add(Ui.IconTextButton(Ui.IconCopy, "Copiar prompt", primary: true, (_, _) => Copy(wb.PromptText, "Prompt copiado. Cole no ChatGPT.")));
         actions.Children.Add(Ui.IconTextButton(Ui.IconOpen, "Abrir no ChatGPT", click: (_, _) => OpenChatGpt()));
 
+        // typing in the prompt makes it a hand edit; the bar says so and goes back to the built one
+        prompt.ToolTip = "Dá para editar à mão: copiar, abrir no ChatGPT e gerar usam o texto como está aqui.";
+        prompt.TextChanged += (_, _) => { if (!rendering) wb.EditPrompt(prompt.Text); };
+        manualNote.TextWrapping = TextWrapping.Wrap;
+        manualNote.VerticalAlignment = VerticalAlignment.Center;
+        var back = Ui.Button("Voltar ao gerado", click: (_, _) => { wb.UseBuiltPrompt(); Say("O prompt voltou a ser o montado pelos campos."); });
+        back.Margin = new Thickness(10, 0, 0, 0);
+        DockPanel.SetDock(back, Dock.Right);
+        manualBar.Children.Add(back);
+        manualBar.Children.Add(manualNote);
+        edit.ToolTip = "Dá para editar à mão antes de aplicar ou copiar; volta ao montado quando você muda outro campo.";
+
         editActions.Children.Add(ApplyButton);
-        editActions.Children.Add(Ui.Button("Copiar ajuste", click: (_, _) => Copy(wb.EditRequest().Text, "Pedido de ajuste copiado.")));
+        editActions.Children.Add(Ui.Button("Copiar ajuste", click: (_, _) => Copy(EditText, "Pedido de ajuste copiado.")));
         editActions.Children.Add(Ui.Button("Usar o atual como base", click: (_, _) => { wb.MarkSent(); Say("O prompt atual virou a nova base."); }));
 
         favName.KeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) SaveFavorite(); };
@@ -61,22 +85,18 @@ internal sealed class PromptPanel : UserControl
         favActions.Children.Add(Ui.Button("Carregar", click: (_, _) => LoadFavorite()));
         favActions.Children.Add(Ui.Button("Apagar", click: (_, _) => DeleteFavorite()));
 
-        var grid = new Grid();
-        var rows = new (UIElement El, GridLength H)[]
-        {
-            (head, GridLength.Auto), (tags, GridLength.Auto), (prompt, new GridLength(1, GridUnitType.Star)), (actions, GridLength.Auto), (status, GridLength.Auto),
-            (Ui.Text("Ajuste rápido", "H2", new Thickness(0, 14, 0, 0)), GridLength.Auto), (editHint, GridLength.Auto),
+        // the prompt above, the quick edit and favorites below; the line between them drags
+        var star = new GridLength(1, GridUnitType.Star);
+        var top = Ui.Rows((head, GridLength.Auto), (tags, GridLength.Auto), (prompt, star), (manualBar, GridLength.Auto), (actions, GridLength.Auto), (status, GridLength.Auto));
+        var bottom = Ui.Rows(
+            (Ui.Text("Ajuste rápido", "H2"), GridLength.Auto), (editHint, GridLength.Auto),
             (edit, GridLength.Auto), (editActions, GridLength.Auto),
             (Ui.Text("Favoritos", "H2", new Thickness(0, 16, 0, 0)), GridLength.Auto), (favForm, GridLength.Auto),
-            (favs, new GridLength(150)), (favActions, GridLength.Auto)
-        };
-        for (var i = 0; i < rows.Length; i++)
-        {
-            grid.RowDefinitions.Add(new RowDefinition { Height = rows[i].H });
-            Grid.SetRow(rows[i].El, i);
-            grid.Children.Add(rows[i].El);
-        }
-        Content = grid;
+            (favs, star), (favActions, GridLength.Auto));
+        favs.MinHeight = 60;
+        // the edit text and the favorites list share what the lower part has
+        editRow = bottom.RowDefinitions[2];
+        Content = Layout.SplitRows("promptSplit", top, bottom, defaultTop: 0.45, minTop: 220, minBottom: 340);
 
         statusTimer.Tick += (_, _) => { status.Text = ""; statusTimer.Stop(); };
         wb.Changed += Render;
@@ -85,9 +105,17 @@ internal sealed class PromptPanel : UserControl
 
     void Render()
     {
-        var text = wb.Result.Text;
+        rendering = true;
+        var text = wb.PromptText;
         if (prompt.Text != text) prompt.Text = text;
-        count.Text = text.Length.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.') + " caracteres";
+        var manual = wb.ManualPrompt is not null;
+        count.Text = text.Length.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.') + " caracteres" + (manual ? "  ·  editado à mão" : "");
+        count.Foreground = manual ? Ui.Res<Brush>("Accent") : Ui.Res<Brush>("Muted");
+        manualBar.Visibility = manual ? Visibility.Visible : Visibility.Collapsed;
+        manualNote.Text = wb.ManualOutdated
+            ? "Você mudou campos depois de editar: o texto editado não acompanha. Copiar e gerar usam ele assim mesmo."
+            : "Editado à mão: copiar, abrir no ChatGPT e gerar usam este texto.";
+        manualNote.Foreground = wb.ManualOutdated ? Ui.Res<Brush>("Error") : Ui.Res<Brush>("Muted");
         var format = wb.Sel.Values.GetValueOrDefault("format") ?? "";
         var formatName = wb.Catalog.Vars["format"].Find(format)?.Pt.Split(" (")[0] ?? "Formato livre";
         tags.Text = $"{wb.Prefab.Name}   ·   {SizeLabels.GetValueOrDefault(format, "tamanho livre")}   ·   {formatName}   ·   {wb.Result.Used.Count} campos";
@@ -96,13 +124,17 @@ internal sealed class PromptPanel : UserControl
         if (wb.Baseline is null) editHint.Text = "Depois de copiar, abrir ou gerar um prompt, mude o que quiser e eu monto o pedido de ajuste, que mantém o resto da imagem igual.";
         else if (req.Changes.Count == 0) editHint.Text = "Nada mudou desde o último prompt enviado. Troque uma opção para montar o pedido de ajuste.";
         else editHint.Text = "Mudou: " + string.Join(", ", req.Changes.Select(c => c.LabelPt)) + ".";
-        edit.Text = req.Text;
-        edit.Visibility = editActions.Visibility = req.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        // a hand edit of the request stays until the built request changes
+        if (req.Text != lastBuiltEdit) { edit.Text = req.Text; lastBuiltEdit = req.Text; }
+        var hasEdit = req.Text.Length > 0;
+        edit.Visibility = editActions.Visibility = hasEdit ? Visibility.Visible : Visibility.Collapsed;
+        if (editRow != null) editRow.Height = hasEdit ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
 
         var selected = (favs.SelectedItem as ListBoxItem)?.Tag;
         favs.Items.Clear();
         foreach (var f in wb.Favorites) favs.Items.Add(FavoriteItem(f));
         if (selected != null) favs.SelectedItem = favs.Items.Cast<ListBoxItem>().FirstOrDefault(i => ReferenceEquals(i.Tag, selected));
+        rendering = false;
     }
 
     ListBoxItem FavoriteItem(Favorite f)
@@ -127,7 +159,7 @@ internal sealed class PromptPanel : UserControl
 
     void OpenChatGpt()
     {
-        var text = wb.Result.Text;
+        var text = wb.PromptText;
         Copy(text, "Abrindo o ChatGPT. O prompt também foi copiado.");
         Process.Start(new ProcessStartInfo("https://chatgpt.com/?q=" + Uri.EscapeDataString(text)) { UseShellExecute = true });
     }
@@ -149,8 +181,8 @@ internal sealed class PromptPanel : UserControl
     void LoadFavorite()
     {
         if ((favs.SelectedItem as ListBoxItem)?.Tag is not Favorite f) return;
-        wb.LoadSelection(f.Selection);
-        Say($"Favorito “{f.Name}” carregado.");
+        wb.LoadSelection(f.Selection, f.ManualPrompt);
+        Say($"Favorito “{f.Name}” carregado." + (f.ManualPrompt is not null ? " O prompt editado à mão veio junto." : ""));
     }
 
     void DeleteFavorite()

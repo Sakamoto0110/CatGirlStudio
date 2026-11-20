@@ -9,14 +9,13 @@
     "multi: true -> the value is a list of ids, shown as chips; options with the same slot exclude each other.",
     "Only the variables a prompt reaches are shown, so a piece or a style can open its own detail fields.",
     "id is a stable key stored in favorites and image .json files: do not rename one that was used.",
-    "House rules: always an adult cat-girl, cute and cozy, never sensual (modest clothing, high necklines, skirts at the knee or longer)."
+    "House rules: always an adult cat-girl, cute and cozy, never sensual."
   ],
   "groups": ["Pose", "Imagem", "Personagem", "Roupa", "Clima e expressão", "Câmera e estilo"],
   "blocks": {
-    "prompt": "{{format}} {{background}}\n\n{{character}} {{theme}} {{outfitSentence}} {{hairAccessory}} {{accessory}}\n\n{{vibe}} {{modesty}}\n\nFocus: {{focus}}\n\nPose: {{pose}}.\n\nExpression: {{expression}}, {{gaze}}.\n\nCamera: {{camera}}.\n\nStyle: {{style}} Color: {{palette}}.\n\n{{rules}}",
+    "prompt": "{{format}} {{background}}\n\n{{character}} {{theme}} {{outfitSentence}} {{hairAccessory}} {{accessory}}\n\n{{vibe}} {{outfitModesty}}\n\nFocus: {{focus}}\n\nPose: {{pose}}.\n\nExpression: {{expression}}, {{gaze}}.\n\nCamera: {{camera}}.\n\nStyle: {{style}} Color: {{palette}}.\n\n{{rules}}",
     "character": "An adult cat-girl with {{hairColor}} hair in {{hairStyle}}, {{eyeColor}} eyes, {{ears}}, and {{tail}}.",
     "outfitSentence": "She wears {{outfit}}.",
-    "modesty": "Modest, non-revealing clothing: no cleavage, no bare shoulders, no emphasis on the body.",
     "rules": "Create a completely new, original image; do not reuse or copy any previous image. Clean anatomy with natural hands. No text, no watermark, no signature."
   },
   "lists": {
@@ -182,26 +181,26 @@
       {"id": "bunny", "pt": "Mochila de coelhinho", "en": "a small plush bunny backpack"}
     ] },
 
-    "hairColor": { "label": "Cor do cabelo", "name": "hair color", "group": "Personagem", "default": "honey",
+    "hairColor": { "label": "Cor do cabelo", "name": "hair color", "group": "Personagem", "default": "honey", "picker": true,
       "options": [
-      {"id": "platinum", "pt": "Loiro platinado", "en": "platinum blonde"},
-      {"id": "honey", "pt": "Loiro mel", "en": "soft honey blonde"},
-      {"id": "golden", "pt": "Loiro dourado", "en": "bright golden blonde"},
-      {"id": "ash", "pt": "Cinza (ash)", "en": "ash gray"},
-      {"id": "silver", "pt": "Prateado", "en": "silver"},
-      {"id": "lavender", "pt": "Lavanda prateado", "en": "lavender-silver"},
-      {"id": "white", "pt": "Branco", "en": "snow white"},
-      {"id": "black", "pt": "Preto", "en": "glossy black"},
-      {"id": "darkbrown", "pt": "Castanho escuro", "en": "dark brown"},
-      {"id": "chestnut", "pt": "Castanho claro", "en": "warm chestnut brown"},
-      {"id": "auburn", "pt": "Ruivo acastanhado", "en": "auburn"},
-      {"id": "ginger", "pt": "Ruivo alaranjado", "en": "ginger orange"},
-      {"id": "pink", "pt": "Rosa pastel", "en": "pastel pink"},
-      {"id": "cherry", "pt": "Rosa cereja", "en": "cherry pink"},
-      {"id": "skyblue", "pt": "Azul claro", "en": "light sky blue"},
-      {"id": "navy", "pt": "Azul marinho", "en": "deep navy blue"},
-      {"id": "mint", "pt": "Verde menta", "en": "mint green"},
-      {"id": "twotone", "pt": "Bicolor preto e branco", "en": "two-tone black and white"}
+      {"id": "platinum", "hex": "#EFE6C8", "pt": "Loiro platinado", "en": "platinum blonde"},
+      {"id": "honey", "hex": "#E2B66E", "pt": "Loiro mel", "en": "soft honey blonde"},
+      {"id": "golden", "hex": "#F2C230", "pt": "Loiro dourado", "en": "bright golden blonde"},
+      {"id": "ash", "hex": "#A9A9B0", "pt": "Cinza (ash)", "en": "ash gray"},
+      {"id": "silver", "hex": "#D7DAE3", "pt": "Prateado", "en": "silver"},
+      {"id": "lavender", "hex": "#CBBEE3", "pt": "Lavanda prateado", "en": "lavender-silver"},
+      {"id": "white", "hex": "#FAFAFF", "pt": "Branco", "en": "snow white"},
+      {"id": "black", "hex": "#1C1C26", "pt": "Preto", "en": "glossy black"},
+      {"id": "darkbrown", "hex": "#4A2F22", "pt": "Castanho escuro", "en": "dark brown"},
+      {"id": "chestnut", "hex": "#8A5434", "pt": "Castanho claro", "en": "warm chestnut brown"},
+      {"id": "auburn", "hex": "#93402B", "pt": "Ruivo acastanhado", "en": "auburn"},
+      {"id": "ginger", "hex": "#E07A34", "pt": "Ruivo alaranjado", "en": "ginger orange"},
+      {"id": "pink", "hex": "#F6C1D3", "pt": "Rosa pastel", "en": "pastel pink"},
+      {"id": "cherry", "hex": "#E4577E", "pt": "Rosa cereja", "en": "cherry pink"},
+      {"id": "skyblue", "hex": "#9CC9EB", "pt": "Azul claro", "en": "light sky blue"},
+      {"id": "navy", "hex": "#24315E", "pt": "Azul marinho", "en": "deep navy blue"},
+      {"id": "mint", "hex": "#A8E0C8", "pt": "Verde menta", "en": "mint green"},
+      {"id": "twotone", "hex": "#7F7F86", "pt": "Bicolor preto e branco", "en": "two-tone black and white"}
     ] },
 
     "hairStyle": { "label": "Penteado", "name": "hairstyle", "group": "Personagem", "default": "twintails",
@@ -289,18 +288,18 @@
     "hairDyeColor": { "label": "Cor do detalhe", "name": "hair detail color", "group": "Personagem", "default": "pink",
       "options": "colors" },
 
-    "eyeColor": { "label": "Olhos", "name": "eye color", "group": "Personagem", "default": "blue",
+    "eyeColor": { "label": "Olhos", "name": "eye color", "group": "Personagem", "default": "blue", "picker": true,
       "options": [
-      {"id": "blue", "pt": "Azul vivo", "en": "big, bright blue"},
-      {"id": "sky", "pt": "Azul céu", "en": "big, pale sky-blue"},
-      {"id": "violet", "pt": "Violeta", "en": "big violet"},
-      {"id": "amethyst", "pt": "Ametista", "en": "big amethyst-purple"},
-      {"id": "emerald", "pt": "Verde esmeralda", "en": "big emerald green"},
-      {"id": "amber", "pt": "Âmbar dourado", "en": "big golden amber"},
-      {"id": "red", "pt": "Vermelho", "en": "big crimson red"},
-      {"id": "pink", "pt": "Rosa", "en": "big soft pink"},
-      {"id": "gray", "pt": "Cinza", "en": "big silver-gray"},
-      {"id": "hetero", "pt": "Heterocromia azul e dourado", "en": "big heterochromatic (one blue, one gold)"}
+      {"id": "blue", "hex": "#3D8BEA", "pt": "Azul vivo", "en": "big, bright blue"},
+      {"id": "sky", "hex": "#A9D3F2", "pt": "Azul céu", "en": "big, pale sky-blue"},
+      {"id": "violet", "hex": "#8A5CD6", "pt": "Violeta", "en": "big violet"},
+      {"id": "amethyst", "hex": "#9B59B6", "pt": "Ametista", "en": "big amethyst-purple"},
+      {"id": "emerald", "hex": "#2E9E6B", "pt": "Verde esmeralda", "en": "big emerald green"},
+      {"id": "amber", "hex": "#E3A12F", "pt": "Âmbar dourado", "en": "big golden amber"},
+      {"id": "red", "hex": "#C0283C", "pt": "Vermelho", "en": "big crimson red"},
+      {"id": "pink", "hex": "#F09AB8", "pt": "Rosa", "en": "big soft pink"},
+      {"id": "gray", "hex": "#B5BAC4", "pt": "Cinza", "en": "big silver-gray"},
+      {"id": "hetero", "hex": "#8FA6B0", "pt": "Heterocromia azul e dourado", "en": "big heterochromatic (one blue, one gold)"}
     ] },
 
     "ears": { "label": "Orelhas", "name": "cat ears", "group": "Personagem", "default": "gray",

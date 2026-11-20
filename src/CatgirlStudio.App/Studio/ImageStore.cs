@@ -21,6 +21,8 @@ internal sealed class StoredImage(string id, string path, JsonObject meta)
     public string Background => S("background") ?? "auto";
     public string? Parent => S("parent");
     public string Prompt => S("prompt") ?? "";
+    /// <summary>A generation whose prompt was edited by hand (not the one the selection builds).</summary>
+    public bool HandEdited => Kind == "generate" && Meta["handEdited"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
     public double? CostUsd => Meta["costUsd"] is JsonValue v && v.TryGetValue<double>(out var d) ? d : null;
     public JsonNode? Selection => Meta["selection"];
     public (int W, int H)? Crop => Meta["crop"] is JsonArray a && a.Count == 2 ? (a[0]!.GetValue<int>(), a[1]!.GetValue<int>()) : null;

@@ -8,6 +8,9 @@ namespace CatgirlStudio.Core;
 public interface IPromptProvider
 {
     bool Handles(string name);
+    /// <summary>Whether the placeholder is a field the user picks (shown, rolled, locked). A text the
+    /// provider derives from other choices, like the outfit's modesty rule, is not.</summary>
+    bool IsField(string name);
     /// <summary>Raw text; {{catalog}} placeholders in it are expanded by the prompt engine.</summary>
     string Text(string name, Selection s);
     /// <summary>The text split into parts, so a quick edit can name only the part that changed.</summary>
@@ -56,6 +59,8 @@ public sealed class Piece
     public bool Legs { get; init; }
     /// <summary>Slots this piece already takes care of (a ready outfit with shoes covers feet).</summary>
     public IReadOnlySet<string> Covers { get; init; } = new HashSet<string>();
+    /// <summary>At-home piece (a little midriff, thin straps): switches the modesty rule to the relaxed one.</summary>
+    public bool Relaxed { get; init; }
     public required IReadOnlyList<PieceProp> Props { get; init; }
 }
 
@@ -82,6 +87,8 @@ public sealed record SlotState(OutfitSlot Slot, Piece Piece, IReadOnlyList<Piece
 public sealed partial class OutfitEngine : IPromptProvider
 {
     public const string Var = "outfit";
+    /// <summary>{{outfitModesty}}: the house modesty rule, relaxed while an at-home piece is worn.</summary>
+    public const string ModestyVar = "outfitModesty";
     const string ThemePiece = "@theme";
 
     [GeneratedRegex(@"(?<!\{)\{([A-Za-z]+)\}(?!\})")] private static partial Regex PropRx();
@@ -90,6 +97,8 @@ public sealed partial class OutfitEngine : IPromptProvider
     public IReadOnlyList<OutfitMode> Modes { get; }
     public OrderedDictionary<string, OutfitSlot> Slots { get; }
     public IReadOnlyDictionary<string, PropDef> Props { get; }
+    /// <summary>The modesty rule: "default", and "relaxed" for at-home pieces.</summary>
+    public IReadOnlyDictionary<string, string> Modesty { get; }
     readonly Dictionary<string, string> defaults = [];
 
     public OutfitEngine(Catalog catalog, string outfitsJson)
@@ -124,6 +133,9 @@ public sealed partial class OutfitEngine : IPromptProvider
             m.GetProperty("main").GetString()!)).ToList();
 
         foreach (var d in root.GetProperty("defaults").EnumerateObject()) defaults[d.Name] = d.Value.GetString()!;
+        Modesty = root.GetProperty("modesty").EnumerateObject().ToDictionary(m => m.Name, m => m.Value.GetString()!);
+        foreach (var k in new[] { "default", "relaxed" })
+            if (!Modesty.ContainsKey(k)) throw new InvalidDataException($"outfits.json: modesty.{k} is missing");
 
         Slots = [];
         foreach (var s in root.GetProperty("slots").EnumerateObject())
@@ -139,6 +151,7 @@ public sealed partial class OutfitEngine : IPromptProvider
                 Theme = p.TryGetProperty("theme", out var t) ? t.GetString() : null,
                 Legs = p.TryGetProperty("legs", out var legs) && legs.ValueKind == JsonValueKind.True,
                 Covers = p.TryGetProperty("covers", out var c) ? c.EnumerateArray().Select(x => x.GetString()!).ToHashSet() : new HashSet<string>(),
+                Relaxed = p.TryGetProperty("relaxed", out var r) && r.ValueKind == JsonValueKind.True,
                 Props = MergeProps(slotProps, p.TryGetProperty("props", out var pp) ? pp : default, s.Name, p.GetProperty("id").GetString()!)
             }).ToList();
             Slots[s.Name] = new OutfitSlot
@@ -192,6 +205,10 @@ public sealed partial class OutfitEngine : IPromptProvider
     {
         var def = Slots[slot];
         var id = s.Values.GetValueOrDefault("outfit." + slot);
+        // A missing bra gets a visible basic fallback whenever the pieces mode has no top.
+        if (slot == "underTop" && Mode(s).Id == "pieces" && PieceIn("top", s).Id == "none" &&
+            (id is null or "none" || def.Find(id) is null))
+            id = "softbra";
         if (id == ThemePiece) id = def.Pieces.FirstOrDefault(p => p.Theme is not null && p.Theme == s.Values.GetValueOrDefault("theme"))?.Id;
         var piece = def.Find(id);
         if (piece is not null && Offered(piece, s)) return piece;
@@ -205,46 +222,68 @@ public sealed partial class OutfitEngine : IPromptProvider
         var mode = Mode(s);
         var pieces = mode.Slots.ToDictionary(x => x, x => PieceIn(x, s));
         var covered = pieces.Values.SelectMany(p => p.Covers).ToHashSet();
+        var mainPiece = covered.Contains(mode.Main)
+            ? pieces.Values.FirstOrDefault(p => p.Covers.Contains(mode.Main)) ?? pieces[mode.Main]
+            : pieces[mode.Main];
         var list = new List<SlotState>();
         foreach (var slot in mode.Slots)
         {
             if (covered.Contains(slot)) continue;
-            if (slot == "legs" && !pieces[mode.Main].Legs) continue;
+            if (slot == "legs" && !mainPiece.Legs) continue;
             list.Add(new SlotState(Slots[slot], pieces[slot], pieces[slot].Props));
         }
         return list;
     }
 
-    /// <summary>The value of a property: fixed, or the chosen one if the piece allows it, or its default.</summary>
+    /// <summary>A color property the piece does not narrow down also takes a picked "#RRGGBB".</summary>
+    public static bool AcceptsHex(PieceProp p) => p.Def.IsColor && p.Allow is null && p.Fixed is null;
+
+    /// <summary>The value of a property: fixed, or the chosen one if the piece allows it (a picked
+    /// color too), or its default.</summary>
     public string PropValue(string slot, PieceProp p, Selection s)
     {
         if (p.Fixed is not null) return p.Fixed;
         var options = p.Options;
         var chosen = s.Values.GetValueOrDefault($"outfit.{slot}.{p.Key}");
         if (chosen is not null && options.Any(o => o.Id == chosen)) return chosen;
+        if (AcceptsHex(p) && ColorWords.IsHex(chosen)) return chosen!;
         var def = p.Default ?? p.Def.Default;
         if (def is not null && def.StartsWith('@')) def = s.Values.GetValueOrDefault(def[1..]);
+        if (AcceptsHex(p) && ColorWords.IsHex(def)) return def!; // following a picked accent color
         return options.Any(o => o.Id == def) ? def! : options[0].Id;
     }
 
-    public string PieceText(string slot, Piece piece, Selection s) => PropRx().Replace(piece.En, m =>
+    public string PieceText(string slot, Piece piece, Selection s)
     {
-        var p = piece.Props.FirstOrDefault(x => x.Key == m.Groups[1].Value);
-        if (p is null) return m.Value; // stays visible so the check notices it
-        var id = PropValue(slot, p, s);
-        var en = p.Def.Options.First(o => o.Id == id).En;
-        return en.Length > 0 ? en : PromptEngine.EmptyMarker; // "with {neckwear}" + nothing -> the "with" goes too
-    });
+        var template = slot == "underTop" && Mode(s).Id == "pieces" && PieceIn("top", s).Id == "none"
+            ? piece.En.Replace(" under her top", "") : piece.En;
+        return PropRx().Replace(template, m =>
+        {
+            var p = piece.Props.FirstOrDefault(x => x.Key == m.Groups[1].Value);
+            if (p is null) return m.Value; // stays visible so the check notices it
+            var id = PropValue(slot, p, s);
+            if (ColorWords.IsHex(id)) return ColorWords.Phrase(id);
+            var en = p.Def.Options.First(o => o.Id == id).En;
+            return en.Length > 0 ? en : PromptEngine.EmptyMarker; // "with {neckwear}" + nothing -> the "with" goes too
+        });
+    }
 
     /* ---------------------------------------------------- IPromptProvider */
 
-    public bool Handles(string name) => name == Var;
+    public bool Handles(string name) => name is Var or ModestyVar;
 
-    public IReadOnlyList<PromptPart> Parts(string name, Selection s) =>
+    public bool IsField(string name) => name == Var;
+
+    /// <summary>True while an at-home piece is worn (in a slot that is in use).</summary>
+    public bool IsRelaxed(Selection s) => State(s).Any(x => x.Piece.Relaxed);
+
+    // the modesty rule has no parts: a quick edit names the pieces that changed, not the rule
+    public IReadOnlyList<PromptPart> Parts(string name, Selection s) => name == ModestyVar ? [] :
         State(s).Select(x => new PromptPart("outfit." + x.Slot.Id, x.Slot.Name, x.Slot.Pt, PieceText(x.Slot.Id, x.Piece, s))).ToList();
 
     public string Text(string name, Selection s)
     {
+        if (name == ModestyVar) return Modesty[IsRelaxed(s) ? "relaxed" : "default"];
         var items = Parts(name, s).Select(p => PromptEngine.Tidy(p.Text)).Where(t => t.Length > 0).ToList();
         return items.Count < 2 ? string.Concat(items) : string.Join(", ", items.Take(items.Count - 1)) + " and " + items[^1];
     }
@@ -291,7 +330,11 @@ public sealed partial class OutfitEngine : IPromptProvider
         var parts = key.Split('.');
         if (parts.Length == 2 && parts[1] == "mode" && Modes.Any(m => m.Id == value)) { into.Values[key] = value; return true; }
         if (parts.Length == 2 && Slots.TryGetValue(parts[1], out var slot) && (slot.Find(value) is not null || value == ThemePiece)) { into.Values[key] = value; return true; }
-        if (parts.Length == 3 && Slots.ContainsKey(parts[1]) && Props.TryGetValue(parts[2], out var prop) && prop.Options.Any(o => o.Id == value)) { into.Values[key] = value; return true; }
+        if (parts.Length == 3 && Slots.ContainsKey(parts[1]) && Props.TryGetValue(parts[2], out var prop))
+        {
+            if (prop.Options.Any(o => o.Id == value)) { into.Values[key] = value; return true; }
+            if (prop.IsColor && ColorWords.IsHex(value)) { into.Values[key] = ColorWords.Canonical(value); return true; }
+        }
         return false;
     }
 

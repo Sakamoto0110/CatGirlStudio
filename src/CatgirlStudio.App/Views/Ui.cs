@@ -77,17 +77,31 @@ internal static class Ui
 
     /// <summary>A color combo: each item shows a swatch of the color's hex. The items are data
     /// with a template (an element can only live in one place, and the closed box shows it too).</summary>
-    public static ComboBox ColorCombo(IEnumerable<OptionDef> colors)
+    public static ComboBox ColorCombo(IEnumerable<OptionDef> colors, bool picker = false)
     {
         var c = new ComboBox();
         var template = Res<DataTemplate>("ColorItemTemplate");
-        foreach (var o in colors) c.Items.Add(new ComboBoxItem { Content = new ColorItem(o.Pt, Fill(o)), ContentTemplate = template, Tag = o });
+        foreach (var o in colors) c.Items.Add(new ComboBoxItem { Content = new ColorItem(o.Pt, Fill(o.Field("hex"))), ContentTemplate = template, Tag = o });
+        if (picker) c.Items.Add(new ComboBoxItem { Content = new ColorItem("Outra cor…", Rainbow), ContentTemplate = template, Tag = PickColor });
         return c;
     }
 
-    static Brush Fill(OptionDef color)
+    /// <summary>Tag of the "Outra cor…" item, which opens the color picker.</summary>
+    public static readonly object PickColor = new();
+
+    static readonly Brush Rainbow = MakeRainbow();
+    static Brush MakeRainbow()
     {
-        if (color.Field("hex") is { } hex)
+        var b = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        foreach (var (hex, at) in new[] { ("#FF8A8A", 0.0), ("#FFD27A", 0.25), ("#8FE3A8", 0.5), ("#86B8FF", 0.75), ("#D69BFF", 1.0) })
+            b.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(hex), at));
+        b.Freeze();
+        return b;
+    }
+
+    static Brush Fill(string? hex)
+    {
+        if (hex is not null)
         {
             try
             {
@@ -100,11 +114,61 @@ internal static class Ui
         return Brushes.Gray;
     }
 
+    /// <summary>In a color combo with a picker: shows a picked "#RRGGBB" as its own item (just
+    /// before "Outra cor…"), or takes that item away when the value is a listed color.</summary>
+    public static void ShowPicked(ComboBox c, string? value)
+    {
+        var items = c.Items.Cast<ComboBoxItem>().ToList();
+        var pick = items.FirstOrDefault(i => i.Tag == PickColor);
+        if (pick is null) return;
+        var item = items.FirstOrDefault(i => i.Tag is string s && ColorWords.IsHex(s));
+        if (!ColorWords.IsHex(value))
+        {
+            if (item != null) c.Items.Remove(item);
+            return;
+        }
+        if (item is null)
+        {
+            item = new ComboBoxItem { ContentTemplate = Res<DataTemplate>("ColorItemTemplate") };
+            c.Items.Insert(c.Items.IndexOf(pick), item);
+        }
+        if ((string?)item.Tag == value) return;
+        item.Tag = value;
+        item.Content = new ColorItem("Cor escolhida  " + value, Fill(value));
+    }
+
+    /// <summary>The hex of a color value: a picked "#RRGGBB" or the swatch of a listed color.</summary>
+    public static string? HexOf(IEnumerable<OptionDef> colors, string? value) =>
+        ColorWords.IsHex(value) ? value : colors.FirstOrDefault(o => o.Id == value)?.Field("hex");
+
+    /// <summary>"Outra cor…" was chosen: opens the picker once the list has closed, then sets the
+    /// picked color, or puts the combo back on the current value.</summary>
+    public static void PickInto(ComboBox c, string title, string? startHex, Action<string> set, Action restore) =>
+        c.Dispatcher.BeginInvoke(() =>
+        {
+            var hex = ColorPicker.Pick(c, title, startHex);
+            if (hex is not null) set(hex);
+            else restore();
+        });
+
     public static void Select(ComboBox c, Func<object?, bool> match)
     {
         foreach (ComboBoxItem item in c.Items)
             if (match(item.Tag)) { if (!ReferenceEquals(c.SelectedItem, item)) c.SelectedItem = item; return; }
         c.SelectedIndex = -1;
+    }
+
+    /// <summary>A one-column grid with these rows, top to bottom.</summary>
+    public static Grid Rows(params (UIElement El, GridLength Height)[] rows)
+    {
+        var g = new Grid();
+        for (var i = 0; i < rows.Length; i++)
+        {
+            g.RowDefinitions.Add(new RowDefinition { Height = rows[i].Height });
+            Grid.SetRow(rows[i].El, i);
+            g.Children.Add(rows[i].El);
+        }
+        return g;
     }
 
     /// <summary>A label column + control column + trailing buttons row.</summary>

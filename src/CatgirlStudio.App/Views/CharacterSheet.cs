@@ -14,14 +14,27 @@ internal interface ISyncView
 
 /// <summary>The character sheet: one row per variable the prompt reaches, grouped like the
 /// catalog, with the outfit editor in "Roupa". Rows are rebuilt only when the set of fields
-/// changes (a new pose, a piece that opens other fields); otherwise they update in place.</summary>
+/// changes (a new pose, a piece that opens other fields); otherwise they update in place.
+/// When the card is wide enough the groups sit in two blocks side by side, the character on the
+/// left and the outfit onwards on the right, each scrolling on its own.</summary>
 internal sealed class CharacterSheet : UserControl
 {
+    /// <summary>Card width from which the sheet splits in two blocks.</summary>
+    const double TwoBlocksFrom = 960;
+    /// <summary>The first group of the right-hand block.</summary>
+    const string RightFrom = "Roupa";
+
     readonly Workbench wb;
-    readonly StackPanel stack = new();
-    readonly ScrollViewer scroll;
+    readonly StackPanel left = new(), right = new();
+    readonly ScrollViewer leftScroll, rightScroll;
+    readonly ColumnDefinition gap = new() { Width = new GridLength(0) }, rightColumn = new() { Width = new GridLength(0) };
+    readonly List<(string Group, TextBlock Legend, List<UIElement> Rows)> groups = [];
     List<string> shown = [];
     readonly List<ISyncView> rows = [];
+    bool twoBlocks;
+
+    /// <summary>For the self-test: whether the groups sit in two blocks right now.</summary>
+    internal bool TwoBlocks => twoBlocks;
 
     public CharacterSheet(Workbench wb)
     {
@@ -31,15 +44,28 @@ internal sealed class CharacterSheet : UserControl
         var hint = Ui.Text("sorteia ou trava cada campo pelos botões à direita", "Small", new Thickness(12, 4, 0, 0));
         head.Children.Add(hint);
 
-        scroll = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(0, 0, 10, 0) };
+        leftScroll = new ScrollViewer { Content = left, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(0, 0, 10, 0) };
+        rightScroll = new ScrollViewer { Content = right, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(0, 0, 10, 0), Visibility = Visibility.Collapsed };
+        var body = new Grid();
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(gap);
+        body.ColumnDefinitions.Add(rightColumn);
+        Grid.SetColumn(rightScroll, 2);
+        body.Children.Add(leftScroll);
+        body.Children.Add(rightScroll);
+
         var grid = new Grid();
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        Grid.SetRow(scroll, 1);
+        Grid.SetRow(body, 1);
         grid.Children.Add(head);
-        grid.Children.Add(scroll);
+        grid.Children.Add(body);
         Content = grid;
 
+        SizeChanged += (_, e) =>
+        {
+            if (e.NewSize.Width >= TwoBlocksFrom != twoBlocks) Place();
+        };
         wb.Changed += Sync;
         Sync();
     }
@@ -61,22 +87,45 @@ internal sealed class CharacterSheet : UserControl
             foreach (var r in rows) r.Sync();
             return;
         }
-        var offset = scroll.VerticalOffset;
-        stack.Children.Clear();
         rows.Clear();
+        groups.Clear();
         foreach (var key in desired)
         {
             if (key.StartsWith('#'))
             {
-                stack.Children.Add(new TextBlock { Text = key[1..].ToUpperInvariant(), Style = Ui.Style("Legend"), Margin = new Thickness(0, stack.Children.Count == 0 ? 4 : 18, 0, 10) });
+                groups.Add((key[1..], new TextBlock { Text = key[1..].ToUpperInvariant(), Style = Ui.Style("Legend") }, []));
                 continue;
             }
             ISyncView row = key == OutfitEngine.Var ? new OutfitEditor(wb) : wb.Catalog.Vars[key].Multi ? new MultiField(wb, wb.Catalog.Vars[key]) : new SingleField(wb, wb.Catalog.Vars[key]);
             rows.Add(row);
-            stack.Children.Add((UIElement)row);
+            groups[^1].Rows.Add((UIElement)row);
         }
         shown = desired;
-        scroll.ScrollToVerticalOffset(offset);
+        Place();
+    }
+
+    /// <summary>Puts the groups in one block or two, keeping each block's scroll position.</summary>
+    void Place()
+    {
+        twoBlocks = ActualWidth >= TwoBlocksFrom;
+        var (leftOffset, rightOffset) = (leftScroll.VerticalOffset, rightScroll.VerticalOffset);
+        left.Children.Clear();
+        right.Children.Clear();
+        var split = groups.FindIndex(g => g.Group == RightFrom);
+        if (split <= 0) split = (groups.Count + 1) / 2; // no outfit group: halve the list
+        for (var i = 0; i < groups.Count; i++)
+        {
+            var into = twoBlocks && i >= split ? right : left;
+            var (_, legend, groupRows) = groups[i];
+            legend.Margin = new Thickness(0, into.Children.Count == 0 ? 4 : 18, 0, 10);
+            into.Children.Add(legend);
+            foreach (var r in groupRows) into.Children.Add(r);
+        }
+        gap.Width = new GridLength(twoBlocks ? 22 : 0);
+        rightColumn.Width = twoBlocks ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        rightScroll.Visibility = twoBlocks ? Visibility.Visible : Visibility.Collapsed;
+        leftScroll.ScrollToVerticalOffset(leftOffset);
+        rightScroll.ScrollToVerticalOffset(rightOffset);
     }
 
     /// <summary>A closed drop-down passes the mouse wheel on, so scrolling the sheet never changes a field.</summary>
@@ -107,11 +156,24 @@ internal sealed class SingleField : ContentControl, ISyncView
     {
         this.wb = wb;
         this.def = def;
-        combo = Ui.Combo(def.Options.Cast<object>().Append(PromptEngine.Custom), o => o is OptionDef d ? d.Pt : "Personalizado (escrever em inglês)…");
+        const string typed = "Personalizado (escrever em inglês)…";
+        if (def.IsColor)
+        {
+            // swatches, a picked color and "Outra cor…", then the typed text like any field
+            combo = Ui.ColorCombo(def.Options, picker: true);
+            combo.Items.Add(new ComboBoxItem { Content = typed, Tag = PromptEngine.Custom });
+        }
+        else combo = Ui.Combo(def.Options.Cast<object>().Append(PromptEngine.Custom), o => o is OptionDef d ? d.Pt : typed);
         CharacterSheet.PassWheel(combo);
         combo.SelectionChanged += (_, _) =>
         {
             if (syncing || combo.SelectedItem is not ComboBoxItem item) return;
+            if (item.Tag == Ui.PickColor)
+            {
+                Ui.PickInto(combo, def.Label, Ui.HexOf(def.Options, wb.Sel.Values.GetValueOrDefault(def.Key) ?? def.Default), hex => wb.SetValue(def.Key, hex), Sync);
+                return;
+            }
+            if (item.Tag is string s && ColorWords.IsHex(s)) return; // the picked color, already set
             wb.SetValue(def.Key, item.Tag is OptionDef o ? o.Id : PromptEngine.Custom);
             if (item.Tag is string) Dispatcher.BeginInvoke(() => custom!.Focus());
         };
@@ -136,7 +198,11 @@ internal sealed class SingleField : ContentControl, ISyncView
         syncing = true;
         var value = wb.Sel.Values.GetValueOrDefault(def.Key);
         var isCustom = value == PromptEngine.Custom;
-        Ui.Select(combo, t => isCustom ? t is string : t is OptionDef o && o.Id == (def.Find(value)?.Id ?? def.Default));
+        var picked = def.IsColor && ColorWords.IsHex(value);
+        Ui.ShowPicked(combo, picked ? value : null);
+        Ui.Select(combo, t => isCustom ? t is string s && s == PromptEngine.Custom
+            : picked ? t is string h && h == value
+            : t is OptionDef o && o.Id == (def.Find(value)?.Id ?? def.Default));
         custom.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
         var text = wb.Sel.Custom.GetValueOrDefault(def.Key) ?? "";
         if (custom.Text != text) custom.Text = text;

@@ -8,8 +8,15 @@
     "legs: the piece shows the legs, so the Meias slot is offered. covers: slots this piece already takes care of (a ready outfit with shoes covers feet).",
     "theme: the piece is offered only while that Estilo is picked.",
     "Text inside pieces has no commas when it goes into a list (pieces, dress, legs, feet); full outfits may have commas.",
-    "House rules: modest clothing, high necklines, sleeves or modest cuts, skirts at the knee or longer."
+    "Outfits are intended to feel cozy and non-sensual, including relaxed homewear.",
+    "relaxed: an at-home piece (a little midriff, a tank top, thin straps); while one is worn, {{outfitModesty}} is modesty.relaxed instead of modesty.default.",
+    "In pieces mode, optional undergarments are described as layers under the selected clothing."
   ],
+
+  "modesty": {
+    "default": "Modest, non-revealing clothing: no cleavage, no bare shoulders, no emphasis on the body.",
+    "relaxed": "Relaxed, comfortable homewear in soft opaque fabric: cozy and not sensual, no cleavage, no emphasis on the body."
+  },
 
   "props": {
     "color": { "label": "Cor", "name": "color", "list": "colors", "default": "cream" },
@@ -41,11 +48,11 @@
 
   "modes": [
     { "id": "ready", "pt": "Pronta", "slots": ["full", "legs", "feet"], "main": "full" },
-    { "id": "pieces", "pt": "Peças", "slots": ["top", "outer", "bottom", "legs", "feet"], "main": "bottom" },
+    { "id": "pieces", "pt": "Peças", "slots": ["underTop", "top", "outer", "underBottom", "bottom", "legs", "feet"], "main": "bottom" },
     { "id": "dress", "pt": "Vestido", "slots": ["dress", "outer", "legs", "feet"], "main": "dress" }
   ],
 
-  "defaults": { "mode": "ready", "full": "cardigan", "dress": "sweaterdress", "top": "oversizedsweater", "outer": "none", "bottom": "pleated", "legs": "thighhigh", "feet": "none" },
+  "defaults": { "mode": "ready", "full": "cardigan", "dress": "sweaterdress", "underTop": "none", "underBottom": "none", "top": "oversizedsweater", "outer": "none", "bottom": "pleated", "legs": "thighhigh", "feet": "none" },
 
   "slots": {
     "full": { "pt": "Roupa", "name": "outfit", "props": { "main": {}, "accent": {} }, "pieces": [
@@ -69,6 +76,14 @@
       {"id": "schoolvest", "pt": "Escola: colete + camisa", "group": "Escola", "legs": true, "en": "a school uniform: a {main} knit vest over a white short-sleeved collared shirt with a {accent} ribbon, a knee-length plaid pleated skirt"},
       {"id": "schoolcardigan", "pt": "Escola: cardigã sobre a camisa", "group": "Escola", "legs": true, "en": "a school uniform: an oversized {main} cardigan worn properly on both shoulders, with sleeves covering half of her hands, over a white collared shirt with a {accent} ribbon, a knee-length plaid pleated skirt"},
       {"id": "gym", "pt": "Escola: educação física", "group": "Escola", "en": "a school gym uniform: a zipped-up {main} track jacket with {accent} stripes down the sleeves and matching long track pants"},
+      {"id": "cropjamas", "pt": "Pijama cropped + shortinho", "group": "Em casa", "relaxed": true, "legs": true, "en": "a cozy {main} pajama set: a cropped short-sleeved top with {accent} piping that shows a little of her midriff and loose matching shorts that reach mid-thigh"},
+      {"id": "camijamas", "pt": "Pijama de alcinha", "group": "Em casa", "relaxed": true, "legs": true, "en": "a soft cotton {main} pajama set: a camisole top with thin straps and loose {accent} sleep shorts that reach mid-thigh"},
+      {"id": "cropsweats", "pt": "Moletom cropped + calça de moletom", "group": "Em casa", "relaxed": true, "en": "a cozy cropped {main} hoodie that shows a little of her midriff, with sleeves covering half of her hands, and high-waisted {accent} sweatpants"},
+      {"id": "tankjamas", "pt": "Regata + calça de pijama", "group": "Em casa", "relaxed": true, "en": "a loose {main} tank top and long {accent} pajama pants with a little star pattern"},
+      {"id": "nightie", "pt": "Camisola de alcinha", "group": "Em casa", "relaxed": true, "legs": true, "en": "a soft cotton {main} nightgown with thin straps that reaches her knees, with {accent} trim along the hem"},
+      {"id": "nightiesleeve", "pt": "Camisola de manguinha com babado", "group": "Em casa", "legs": true, "en": "a loose cotton {main} nightgown with puffed short sleeves, a rounded collar and a little {accent} ruffle at the hem that reaches her knees"},
+      {"id": "nightiecardigan", "pt": "Camisola + cardigã", "group": "Em casa", "legs": true, "en": "a soft cotton {main} nightgown that reaches her knees under a loose {accent} knit cardigan worn properly on both shoulders"},
+      {"id": "lounge", "pt": "Moletom largo + shortinho", "group": "Em casa", "legs": true, "en": "an oversized {main} sweatshirt worn properly on both shoulders, with sleeves covering half of her hands, over loose {accent} lounge shorts that reach mid-thigh"},
       {"id": "theme-idol", "pt": "Roupa de palco (idol)", "theme": "idol", "legs": true, "en": "a frilly {main} idol stage outfit with a high collar, puffed short sleeves, {accent} ribbons and a knee-length tiered skirt"},
       {"id": "theme-nerdy", "pt": "Cardigã e saia xadrez (nerd)", "theme": "nerdy", "legs": true, "en": "an oversized {main} cardigan worn properly on both shoulders over a white collared shirt with a {accent} ribbon, a knee-length plaid skirt"},
       {"id": "theme-streamer", "pt": "Moletom de stream", "theme": "streamer", "legs": true, "en": "an oversized {main} hoodie with cat-ear details on the hood and sleeves covering half of her hands, and comfy {accent} shorts"},
@@ -88,12 +103,47 @@
       {"id": "sailordress", "pt": "Vestido marinheiro", "legs": true, "en": "a {color} {pattern} sailor dress with a wide collar and long sleeves"},
       {"id": "hoodiedress", "pt": "Moletom-vestido com orelhinhas", "legs": true, "props": { "hood": {}, "sleeves": {} }, "en": "an oversized {color} {pattern} hoodie dress with {hood} and {sleeves}"},
       {"id": "apron", "pt": "Vestido avental (estilo café)", "legs": true, "en": "a long-sleeved {color} {pattern} dress with a high collar under a frilly white apron"},
+      {"id": "nightie", "pt": "Camisola de alcinha", "relaxed": true, "legs": true, "en": "a soft {color} {pattern} cotton nightgown with thin straps that reaches her knees"},
+      {"id": "nightiesleeve", "pt": "Camisola de manguinha", "legs": true, "en": "a loose {color} {pattern} cotton nightgown with short sleeves and a rounded collar that reaches her knees"},
       {"id": "nightgown", "pt": "Camisola longa de dormir", "en": "a long loose {color} {pattern} nightgown with long sleeves and a rounded collar"},
       {"id": "knitlong", "pt": "Vestido longo de tricô", "en": "a long {color} {pattern} knit dress with a high neckline and long sleeves"},
       {"id": "tiered", "pt": "Vestido longo em camadas", "en": "a long tiered {color} {pattern} dress with long puffed sleeves and a rounded collar"}
     ] },
 
+    "underTop": { "pt": "Sutiã", "name": "bra", "props": { "color": {}, "pattern": {} }, "pieces": [
+      {"id": "none", "pt": "Não especificar", "props": { "color": null, "pattern": null }, "en": ""},
+      {"id": "softbra", "pt": "Sutiã macio de algodão", "en": "a soft {color} {pattern} cotton bra under her top"},
+      {"id": "bralette", "pt": "Bralette confortável", "en": "a comfortable {color} {pattern} bralette under her top"},
+      {"id": "sportsbra", "pt": "Top esportivo", "en": "a soft {color} {pattern} sports bra under her top"},
+      {"id": "seamlessbra", "pt": "Sutiã sem costura", "en": "a seamless {color} {pattern} bra under her top"},
+      {"id": "lacebra", "pt": "Sutiã com detalhe de renda", "en": "a {color} {pattern} bra with delicate lace trim under her top"}
+    ] },
+
+    "underBottom": { "pt": "Calcinha", "name": "underwear", "props": { "color": {}, "pattern": {} }, "pieces": [
+      {"id": "none", "pt": "Não especificar", "props": { "color": null, "pattern": null }, "en": ""},
+      {"id": "briefs", "pt": "Calcinha de algodão", "en": "soft {color} {pattern} cotton briefs under her clothing"},
+      {"id": "boyshorts", "pt": "Calcinha shortinho", "en": "comfortable {color} {pattern} boyshort underwear under her clothing"},
+      {"id": "highwaist", "pt": "Calcinha de cintura alta", "en": "high-waisted {color} {pattern} briefs under her clothing"},
+      {"id": "seamless", "pt": "Calcinha sem costura", "en": "seamless {color} {pattern} underwear under her clothing"},
+      {"id": "lacebriefs", "pt": "Calcinha com detalhe de renda", "en": "{color} {pattern} briefs with delicate lace trim under her clothing"},
+      {"id": "lace", "pt": "Calcinha de renda", "en": "{color} {pattern} lace briefs under her clothing"},
+      {"id": "satin", "pt": "Calcinha de cetim", "en": "{color} {pattern} satin briefs under her clothing"},
+      {"id": "opaque", "pt": "Calcinha de tecido opaco", "en": "{color} {pattern} opaque briefs under her clothing"},
+      {"id": "ruffled", "pt": "Calcinha com babados", "en": "{color} {pattern} briefs with ruffled trim under her clothing"},
+      {"id": "bowfront", "pt": "Calcinha com laço na frente", "en": "{color} {pattern} briefs with a small bow at the front under her clothing"},
+      {"id": "bikinibriefs", "pt": "Calcinha de corte biquíni", "en": "{color} {pattern} bikini-cut briefs under her clothing"},
+      {"id": "fullbriefs", "pt": "Calcinha de cobertura ampla", "en": "{color} {pattern} full-coverage briefs under her clothing"},
+      {"id": "hipster", "pt": "Calcinha hipster", "en": "{color} {pattern} hipster briefs under her clothing"},
+      {"id": "cheeky", "pt": "Calcinha cheeky", "en": "{color} {pattern} cheeky-cut briefs under her clothing"},
+      {"id": "brazilian", "pt": "Calcinha de corte brasileiro", "en": "{color} {pattern} Brazilian-cut briefs under her clothing"},
+      {"id": "thong", "pt": "Calcinha fio-dental", "en": "a {color} {pattern} thong under her clothing"},
+      {"id": "gstring", "pt": "Calcinha fio-dental com cordão", "en": "a {color} {pattern} G-string under her clothing"},
+      {"id": "stringbikini", "pt": "Calcinha biquíni de tirinhas", "en": "{color} {pattern} string bikini briefs under her clothing"},
+      {"id": "highcut", "pt": "Calcinha de corte cavado", "en": "{color} {pattern} high-cut briefs under her clothing"}
+    ] },
+
     "top": { "pt": "Parte de cima", "name": "top", "props": { "color": {}, "pattern": {} }, "pieces": [
+      {"id": "none", "pt": "Sem blusa (sutiã à mostra)", "relaxed": true, "props": { "color": null, "pattern": null }, "en": "no shirt or blouse"},
       {"id": "oversizedsweater", "pt": "Suéter oversized", "props": { "sleeves": {} }, "en": "an oversized {color} {pattern} knit sweater worn properly on both shoulders with {sleeves}"},
       {"id": "sweater", "pt": "Suéter de tricô", "en": "a soft {color} {pattern} knit sweater with long sleeves"},
       {"id": "turtleneck", "pt": "Gola alta", "en": "a soft {color} {pattern} turtleneck sweater"},
@@ -108,7 +158,31 @@
       {"id": "fleece", "pt": "Blusa de fleece fofinha", "en": "a fluffy {color} {pattern} fleece pullover with a high zip collar"},
       {"id": "polo", "pt": "Camisa polo de manga longa", "en": "a {color} {pattern} long-sleeved polo shirt"},
       {"id": "henley", "pt": "Blusa de botãozinho (henley)", "en": "a soft {color} {pattern} long-sleeved henley top buttoned up to the collar"},
-      {"id": "ruffle", "pt": "Blusa com gola de babado", "en": "a {color} {pattern} blouse with a high ruffled collar and long sleeves"}
+      {"id": "ruffle", "pt": "Blusa com gola de babado", "en": "a {color} {pattern} blouse with a high ruffled collar and long sleeves"},
+      {"id": "croptee", "pt": "Camiseta cropped", "relaxed": true, "en": "a loose {color} {pattern} cropped t-shirt that shows a little of her midriff"},
+      {"id": "crophoodie", "pt": "Moletom cropped com orelhinhas", "relaxed": true, "props": { "hood": {}, "sleeves": {} }, "en": "a cozy cropped {color} {pattern} hoodie that shows a little of her midriff with {hood} and {sleeves}"},
+      {"id": "cropknit", "pt": "Suéter cropped de tricô", "relaxed": true, "en": "a soft cropped {color} {pattern} knit sweater with long sleeves that shows a little of her midriff"},
+      {"id": "tanktop", "pt": "Regata larga", "relaxed": true, "en": "a loose {color} {pattern} tank top"},
+      {"id": "camisole", "pt": "Camisetinha de alça (algodão)", "relaxed": true, "en": "a soft {color} {pattern} cotton camisole with thin straps"},
+      {"id": "ribbedtank", "pt": "Regata canelada leve", "relaxed": true, "en": "a lightweight {color} {pattern} ribbed cotton tank top"},
+      {"id": "loungetee", "pt": "Blusinha macia de manga curta", "relaxed": true, "en": "a soft lightweight {color} {pattern} short-sleeved lounge top"},
+      {"id": "sleepcami", "pt": "Blusinha de pijama com renda", "relaxed": true, "en": "a soft {color} {pattern} sleep camisole with delicate lace trim"},
+      {"id": "pajamashorttop", "pt": "Blusa de pijama de manga curta", "relaxed": true, "en": "a light {color} {pattern} short-sleeved pajama top with piping"},
+      {"id": "nightgowncami", "pt": "Camisola de alcinha", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a soft {color} {pattern} cotton nightgown with thin straps"},
+      {"id": "nightgownsleeve", "pt": "Camisola de manguinha", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a comfortable {color} {pattern} nightgown with short sleeves"},
+      {"id": "nightgownlace", "pt": "Camisola com renda", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a soft {color} {pattern} nightgown with delicate lace trim"},
+      {"id": "nightgownsatin", "pt": "Camisola de cetim", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a comfortable {color} {pattern} satin nightgown with thin straps"},
+      {"id": "nightgownlong", "pt": "Camisola longa", "relaxed": true, "covers": ["bottom"], "en": "a long loose {color} {pattern} nightgown with short sleeves"},
+      {"id": "nightgownruffle", "pt": "Camisola com babadinhos", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a soft {color} {pattern} nightgown with delicate ruffled trim and thin straps"},
+      {"id": "nightgownbow", "pt": "Camisola com lacinho", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a comfortable {color} {pattern} cotton nightgown with a small bow at the neckline"},
+      {"id": "nightgownjersey", "pt": "Camisola de malha macia", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a loose {color} {pattern} jersey nightgown with short sleeves"},
+      {"id": "nightgownribbed", "pt": "Camisola canelada", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a soft {color} {pattern} ribbed cotton nightgown with wide straps"},
+      {"id": "nightgownbutton", "pt": "Camisola com botõezinhos", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a loose {color} {pattern} cotton nightgown with small buttons and short sleeves"},
+      {"id": "nightgownpuff", "pt": "Camisola de manga bufante", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a light {color} {pattern} nightgown with short puff sleeves and a softly gathered hem"},
+      {"id": "nightgownlacehem", "pt": "Camisola com renda na barra", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a comfortable {color} {pattern} cotton nightgown with fine lace along the hem"},
+      {"id": "nightgownlongsleeve", "pt": "Camisola de manga longa", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a soft loose {color} {pattern} nightgown with long sleeves"},
+      {"id": "nightgownmidi", "pt": "Camisola midi fluida", "relaxed": true, "covers": ["bottom"], "en": "a flowing mid-calf {color} {pattern} nightgown with delicate straps"},
+      {"id": "nightgowncottonlace", "pt": "Camisola de algodão com renda", "relaxed": true, "legs": true, "covers": ["bottom"], "en": "a soft {color} {pattern} cotton nightgown with delicate lace edging and a relaxed fit"}
     ] },
 
     "outer": { "pt": "Por cima", "name": "outerwear", "props": { "color": { "default": "camel" } }, "pieces": [
@@ -127,10 +201,13 @@
       {"id": "varsity", "pt": "Jaqueta college", "en": "a {color} varsity jacket with cream sleeves"},
       {"id": "fleecejacket", "pt": "Jaqueta de fleece", "en": "a fluffy {color} fleece jacket"},
       {"id": "haori", "pt": "Haori", "en": "a light {color} haori jacket with a subtle pattern"},
-      {"id": "puffer", "pt": "Jaqueta puffer", "en": "a puffy {color} winter jacket with a fur-trimmed hood down"}
+      {"id": "puffer", "pt": "Jaqueta puffer", "en": "a puffy {color} winter jacket with a fur-trimmed hood down"},
+      {"id": "openhoodie", "pt": "Moletom aberto", "en": "an open oversized {color} zip-up hoodie worn on both shoulders"},
+      {"id": "blanket", "pt": "Cobertor nos ombros", "props": { "color": { "default": "cream" } }, "en": "a soft {color} blanket draped over her shoulders"}
     ] },
 
     "bottom": { "pt": "Parte de baixo", "name": "bottom", "props": { "color": { "default": "brown" }, "pattern": {} }, "pieces": [
+      {"id": "none", "pt": "Sem calça ou saia", "legs": true, "props": { "color": null, "pattern": null }, "en": "no trousers or skirt"},
       {"id": "pleated", "pt": "Saia plissada", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} pleated skirt"},
       {"id": "pleatedstripe", "pt": "Saia plissada com listras brancas na barra", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} pleated skirt with two thin white stripes near the hem"},
       {"id": "aline", "pt": "Saia evasê", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} A-line skirt"},
@@ -146,7 +223,13 @@
       {"id": "sweatpants", "pt": "Calça de moletom", "props": { "pattern": null }, "en": "soft {color} sweatpants"},
       {"id": "pajamapants", "pt": "Calça de pijama", "en": "loose {color} {pattern} pajama pants"},
       {"id": "jeans", "pt": "Calça jeans larga", "props": { "pattern": null }, "en": "loose {color} jeans"},
-      {"id": "overalls", "pt": "Jardineira (calça)", "props": { "pattern": null }, "en": "loose {color} denim overalls"}
+      {"id": "overalls", "pt": "Jardineira (calça)", "props": { "pattern": null }, "en": "loose {color} denim overalls"},
+      {"id": "sleepshorts", "pt": "Short de pijama largo", "legs": true, "en": "loose {color} {pattern} pajama shorts that reach mid-thigh"},
+      {"id": "shortsleep", "pt": "Shortinho curto de pijama", "relaxed": true, "legs": true, "en": "soft {color} {pattern} short pajama shorts"},
+      {"id": "cottonlounge", "pt": "Shortinho de algodão", "relaxed": true, "legs": true, "en": "comfortable short {color} {pattern} cotton lounge shorts"},
+      {"id": "rufflesleep", "pt": "Shortinho de pijama com babadinho", "relaxed": true, "legs": true, "en": "short {color} {pattern} pajama shorts with a delicate ruffled hem"},
+      {"id": "leggings", "pt": "Legging", "props": { "pattern": null }, "en": "soft {color} leggings"},
+      {"id": "highwaist", "pt": "Calça de moletom de cintura alta", "props": { "pattern": null }, "en": "high-waisted {color} sweatpants"}
     ] },
 
     "legs": { "pt": "Meias", "name": "legwear", "pieces": [
