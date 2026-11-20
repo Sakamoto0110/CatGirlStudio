@@ -47,7 +47,7 @@ jobs:
           $package = 'CatGirlStudio-win-x64.zip'
           Compress-Archive -LiteralPath publish/ci/CatgirlStudio.exe -DestinationPath "publish/$package"
           $hash = (Get-FileHash -LiteralPath "publish/$package" -Algorithm SHA256).Hash.ToLowerInvariant()
-          Set-Content -LiteralPath "publish/$package.sha256" -Value "$hash  $package" -Encoding ascii
+          Set-Content -LiteralPath "publish/$package.sha256" -Value ("$hash  $package" + [char]10) -Encoding ascii -NoNewline
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
