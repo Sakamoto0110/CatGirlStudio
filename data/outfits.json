@@ -1,0 +1,182 @@
+{
+  "notes": [
+    "Outfits for the app (OutfitEngine). Every piece declares what can be customized on it; nothing else can change.",
+    "A mode picks which body slots are in use: ready (one full outfit), pieces (top, over the top, bottom), dress.",
+    "en text uses {prop} for the piece's own properties and may use {{catalogVar}} (e.g. {{accentColor}}).",
+    "props: a slot's props apply to all its pieces; a piece adds or overrides them, and \"name\": null removes one. A prop can set default, allow (the only options offered) or fixed (shown, not editable).",
+    "A default of \"@var\" follows a catalog variable (\"@accentColor\": the accent color of the ribbons and details).",
+    "legs: the piece shows the legs, so the Meias slot is offered. covers: slots this piece already takes care of (a ready outfit with shoes covers feet).",
+    "theme: the piece is offered only while that Estilo is picked.",
+    "Text inside pieces has no commas when it goes into a list (pieces, dress, legs, feet); full outfits may have commas.",
+    "House rules: modest clothing, high necklines, sleeves or modest cuts, skirts at the knee or longer."
+  ],
+
+  "props": {
+    "color": { "label": "Cor", "name": "color", "list": "colors", "default": "cream" },
+    "pattern": { "label": "Estampa", "name": "pattern", "list": "patterns", "default": "none" },
+    "main": { "label": "Cor principal", "name": "main color", "list": "colors", "default": "beige" },
+    "accent": { "label": "Cor de destaque", "name": "accent color", "list": "colors", "default": "@accentColor" },
+    "sleeves": { "label": "Mangas", "name": "sleeves", "default": "half", "options": [
+      {"id": "half", "pt": "Cobrindo metade das mãos", "en": "long sleeves covering half of her hands"},
+      {"id": "paws", "pt": "Cobrindo as mãos inteiras", "en": "long sleeves that fully cover her hands like little paws"},
+      {"id": "rolled", "pt": "Arregaçadas até o cotovelo", "en": "the sleeves pushed up to her elbows"}
+    ] },
+    "hood": { "label": "Capuz", "name": "hood", "default": "down", "options": [
+      {"id": "down", "pt": "Abaixado (orelhinhas aparecendo)", "en": "the hood down showing its little cat-ear details"},
+      {"id": "up", "pt": "Na cabeça, orelhas pelos furos", "en": "the hood up over her head and her own cat ears poking out through two openings"}
+    ] },
+    "neckwear": { "label": "Na gola", "name": "neckwear", "default": "ribbon", "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "ribbon", "pt": "Lacinho", "en": "a small {{accentColor}} ribbon at the collar"},
+      {"id": "tie", "pt": "Gravata solta", "en": "a loose {{accentColor}} necktie"},
+      {"id": "bowtie", "pt": "Gravata-borboleta", "en": "a small {{accentColor}} bow tie"},
+      {"id": "neckerchief", "pt": "Lenço de marinheiro", "en": "a {{accentColor}} neckerchief tied at the collar"}
+    ] },
+    "skirtLength": { "label": "Comprimento da saia", "name": "skirt length", "default": "knee", "options": [
+      {"id": "knee", "pt": "No joelho", "en": "knee-length"},
+      {"id": "midi", "pt": "Meio da canela", "en": "mid-calf"},
+      {"id": "long", "pt": "Longa, no tornozelo", "en": "long ankle-length"}
+    ] }
+  },
+
+  "modes": [
+    { "id": "ready", "pt": "Pronta", "slots": ["full", "legs", "feet"], "main": "full" },
+    { "id": "pieces", "pt": "Peças", "slots": ["top", "outer", "bottom", "legs", "feet"], "main": "bottom" },
+    { "id": "dress", "pt": "Vestido", "slots": ["dress", "outer", "legs", "feet"], "main": "dress" }
+  ],
+
+  "defaults": { "mode": "ready", "full": "cardigan", "dress": "sweaterdress", "top": "oversizedsweater", "outer": "none", "bottom": "pleated", "legs": "thighhigh", "feet": "none" },
+
+  "slots": {
+    "full": { "pt": "Roupa", "name": "outfit", "props": { "main": {}, "accent": {} }, "pieces": [
+      {"id": "cardigan", "pt": "Cardigã oversized + camiseta", "legs": true, "en": "an oversized, cozy {main} cardigan worn properly on both shoulders, with long sleeves covering half of her hands, over a loose {accent} t-shirt with a high neckline, polka-dot shorts"},
+      {"id": "hoodie", "pt": "Moletom oversized", "legs": true, "en": "an oversized {main} hoodie with cat-ear details on the hood, sleeves covering half of her hands, {accent} shorts"},
+      {"id": "wintercoat", "pt": "Casaco de inverno + cachecol", "legs": true, "en": "a long {main} wool coat with gold buttons over a dark dress with a subtle floral pattern, a long chunky {accent} knitted scarf"},
+      {"id": "turtleneck", "pt": "Gola alta + saia longa", "legs": true, "en": "a soft {main} turtleneck sweater tucked into a long pleated {accent} skirt"},
+      {"id": "sweaterdress", "pt": "Suéter-vestido oversized", "legs": true, "en": "an oversized {main} knit sweater dress worn properly on both shoulders, long sleeves covering her hands, a small {accent} ribbon at the collar"},
+      {"id": "sundress", "pt": "Vestido + cardigã leve", "en": "a {main} sundress with a high neckline under a light {accent} cardigan"},
+      {"id": "pajamas", "pt": "Pijama fofinho", "en": "cozy {main} pajamas with a {accent} cat-paw pattern, long sleeves and long pants"},
+      {"id": "gothic", "pt": "Gótico suave", "legs": true, "en": "a modest gothic-lolita style {main} dress with {accent} ribbons and lace trim, a high collar, long sleeves"},
+      {"id": "street", "pt": "Streetwear", "covers": ["feet"], "en": "an oversized {main} bomber jacket over a {accent} hoodie, cargo pants and chunky sneakers"},
+      {"id": "cafe", "pt": "Uniforme de café", "legs": true, "en": "a café waitress uniform: a long-sleeved {main} dress with a high collar, a frilly white apron with {accent} trim"},
+      {"id": "yukata", "pt": "Yukata", "en": "a {main} yukata with a {accent} floral pattern and a matching obi"},
+      {"id": "raincoat", "pt": "Capa de chuva", "covers": ["feet"], "en": "a glossy {main} raincoat with the hood down, a {accent} sweater underneath and rubber boots"},
+      {"id": "office", "pt": "Blusa + saia social", "legs": true, "en": "a {main} blouse with a soft bow at the collar, a high-waisted {accent} skirt"},
+      {"id": "sporty", "pt": "Esportivo", "covers": ["feet"], "en": "a zipped-up {main} track jacket, {accent} track pants and sneakers"},
+      {"id": "witch", "pt": "Bruxinha", "en": "a cute witch outfit: a long {main} dress, a short cape, and a wide-brim hat with a {accent} ribbon and openings for her cat ears"},
+      {"id": "sailor", "pt": "Escola: uniforme marinheiro", "group": "Escola", "legs": true, "en": "a {main} sailor school uniform with long sleeves, a wide collar with two white stripes, a {accent} neckerchief and a knee-length pleated skirt"},
+      {"id": "blazer", "pt": "Escola: blazer + saia xadrez", "group": "Escola", "legs": true, "en": "a school uniform: a {main} blazer with an emblem on the chest over a white collared shirt with a {accent} ribbon tie, a knee-length plaid pleated skirt"},
+      {"id": "schoolvest", "pt": "Escola: colete + camisa", "group": "Escola", "legs": true, "en": "a school uniform: a {main} knit vest over a white short-sleeved collared shirt with a {accent} ribbon, a knee-length plaid pleated skirt"},
+      {"id": "schoolcardigan", "pt": "Escola: cardigã sobre a camisa", "group": "Escola", "legs": true, "en": "a school uniform: an oversized {main} cardigan worn properly on both shoulders, with sleeves covering half of her hands, over a white collared shirt with a {accent} ribbon, a knee-length plaid pleated skirt"},
+      {"id": "gym", "pt": "Escola: educação física", "group": "Escola", "en": "a school gym uniform: a zipped-up {main} track jacket with {accent} stripes down the sleeves and matching long track pants"},
+      {"id": "theme-idol", "pt": "Roupa de palco (idol)", "theme": "idol", "legs": true, "en": "a frilly {main} idol stage outfit with a high collar, puffed short sleeves, {accent} ribbons and a knee-length tiered skirt"},
+      {"id": "theme-nerdy", "pt": "Cardigã e saia xadrez (nerd)", "theme": "nerdy", "legs": true, "en": "an oversized {main} cardigan worn properly on both shoulders over a white collared shirt with a {accent} ribbon, a knee-length plaid skirt"},
+      {"id": "theme-streamer", "pt": "Moletom de stream", "theme": "streamer", "legs": true, "en": "an oversized {main} hoodie with cat-ear details on the hood and sleeves covering half of her hands, and comfy {accent} shorts"},
+      {"id": "theme-gothic", "pt": "Vestido gótico fofo", "theme": "gothic", "legs": true, "props": { "accent": null }, "en": "a modest {main} gothic dress with black lace trim, a high collar, long sleeves and a knee-length layered skirt"},
+      {"id": "theme-magical", "pt": "Roupa de garota mágica", "theme": "magical", "legs": true, "en": "a modest magical girl outfit in {main} and {accent}: a dress with puffed sleeves, a big bow at the high collar and a knee-length layered skirt"},
+      {"id": "theme-sporty", "pt": "Agasalho esportivo", "theme": "sporty", "covers": ["feet"], "en": "a zipped-up {main} track jacket with {accent} stripes down the sleeves, matching long track pants and sneakers"},
+      {"id": "theme-pastel", "pt": "Moletom pastel + saia de tule", "theme": "pastel", "legs": true, "en": "an oversized pastel {main} hoodie with little cloud and star prints and a knee-length {accent} tulle skirt"}
+    ] },
+
+    "dress": { "pt": "Vestido", "name": "dress", "props": { "color": {}, "pattern": {} }, "pieces": [
+      {"id": "sweaterdress", "pt": "Suéter-vestido oversized", "legs": true, "props": { "sleeves": {} }, "en": "an oversized {color} {pattern} knit sweater dress worn properly on both shoulders with {sleeves}"},
+      {"id": "smock", "pt": "Vestido bata soltinho", "legs": true, "en": "a loose {color} {pattern} smock dress with long sleeves and a rounded collar"},
+      {"id": "pinafore", "pt": "Jardineira (pinafore) sobre blusa", "legs": true, "en": "a {color} {pattern} pinafore dress over a white long-sleeved blouse"},
+      {"id": "shirtdress", "pt": "Chemise com cinto", "legs": true, "en": "a {color} {pattern} button-up shirt dress with long sleeves and a soft belt"},
+      {"id": "summer", "pt": "Vestido de verão com mangas bufantes", "legs": true, "en": "a light {color} {pattern} summer dress with a high neckline and short puffed sleeves"},
+      {"id": "lolita", "pt": "Lolita suave", "legs": true, "en": "a modest lolita-style {color} {pattern} long-sleeved dress with lace trim and a high collar"},
+      {"id": "sailordress", "pt": "Vestido marinheiro", "legs": true, "en": "a {color} {pattern} sailor dress with a wide collar and long sleeves"},
+      {"id": "hoodiedress", "pt": "Moletom-vestido com orelhinhas", "legs": true, "props": { "hood": {}, "sleeves": {} }, "en": "an oversized {color} {pattern} hoodie dress with {hood} and {sleeves}"},
+      {"id": "apron", "pt": "Vestido avental (estilo café)", "legs": true, "en": "a long-sleeved {color} {pattern} dress with a high collar under a frilly white apron"},
+      {"id": "nightgown", "pt": "Camisola longa de dormir", "en": "a long loose {color} {pattern} nightgown with long sleeves and a rounded collar"},
+      {"id": "knitlong", "pt": "Vestido longo de tricô", "en": "a long {color} {pattern} knit dress with a high neckline and long sleeves"},
+      {"id": "tiered", "pt": "Vestido longo em camadas", "en": "a long tiered {color} {pattern} dress with long puffed sleeves and a rounded collar"}
+    ] },
+
+    "top": { "pt": "Parte de cima", "name": "top", "props": { "color": {}, "pattern": {} }, "pieces": [
+      {"id": "oversizedsweater", "pt": "Suéter oversized", "props": { "sleeves": {} }, "en": "an oversized {color} {pattern} knit sweater worn properly on both shoulders with {sleeves}"},
+      {"id": "sweater", "pt": "Suéter de tricô", "en": "a soft {color} {pattern} knit sweater with long sleeves"},
+      {"id": "turtleneck", "pt": "Gola alta", "en": "a soft {color} {pattern} turtleneck sweater"},
+      {"id": "hoodie", "pt": "Moletom com orelhinhas no capuz", "props": { "hood": {}, "sleeves": {} }, "en": "an oversized {color} {pattern} hoodie with {hood} and {sleeves}"},
+      {"id": "tshirt", "pt": "Camiseta larga", "en": "a loose {color} {pattern} t-shirt with a high crew neckline"},
+      {"id": "blouse", "pt": "Blusa com laço na gola", "en": "a {color} {pattern} blouse with long puffed sleeves and a soft bow at the high collar"},
+      {"id": "shirt", "pt": "Camisa de botão fechada", "props": { "neckwear": {} }, "en": "a {color} {pattern} long-sleeved button-up shirt buttoned all the way up with {neckwear}"},
+      {"id": "sailor", "pt": "Blusa marinheiro", "en": "a {color} {pattern} sailor-style blouse with a wide collar and long sleeves"},
+      {"id": "vest", "pt": "Colete de tricô sobre camisa", "props": { "neckwear": {} }, "en": "a {color} {pattern} knit vest over a white long-sleeved collared shirt with {neckwear}"},
+      {"id": "schoolshirt", "pt": "Camisa de uniforme", "props": { "neckwear": {} }, "en": "a {color} {pattern} collared school shirt with {neckwear}"},
+      {"id": "pajamatop", "pt": "Blusa de pijama", "en": "a loose {color} {pattern} pajama top with long sleeves and a rounded collar"},
+      {"id": "fleece", "pt": "Blusa de fleece fofinha", "en": "a fluffy {color} {pattern} fleece pullover with a high zip collar"},
+      {"id": "polo", "pt": "Camisa polo de manga longa", "en": "a {color} {pattern} long-sleeved polo shirt"},
+      {"id": "henley", "pt": "Blusa de botãozinho (henley)", "en": "a soft {color} {pattern} long-sleeved henley top buttoned up to the collar"},
+      {"id": "ruffle", "pt": "Blusa com gola de babado", "en": "a {color} {pattern} blouse with a high ruffled collar and long sleeves"}
+    ] },
+
+    "outer": { "pt": "Por cima", "name": "outerwear", "props": { "color": { "default": "camel" } }, "pieces": [
+      {"id": "none", "pt": "Nada", "props": { "color": null }, "en": ""},
+      {"id": "cardigan", "pt": "Cardigã oversized", "en": "an oversized {color} cardigan worn properly on both shoulders"},
+      {"id": "coat", "pt": "Casaco longo de lã", "en": "a long {color} wool coat with large buttons"},
+      {"id": "duffle", "pt": "Casaco duffle com capuz", "en": "a {color} duffle coat with toggle buttons and a hood"},
+      {"id": "trench", "pt": "Trench coat", "en": "a {color} trench coat with a soft belt"},
+      {"id": "bomber", "pt": "Jaqueta bomber", "en": "an oversized {color} bomber jacket"},
+      {"id": "denim", "pt": "Jaqueta jeans", "en": "a {color} denim jacket"},
+      {"id": "raincoat", "pt": "Capa de chuva", "en": "a glossy {color} raincoat with the hood down"},
+      {"id": "capelet", "pt": "Capinha curta com laço", "en": "a short {color} capelet tied with a ribbon"},
+      {"id": "poncho", "pt": "Poncho de tricô", "en": "a cozy {color} knit poncho"},
+      {"id": "apron", "pt": "Avental com babado", "en": "a frilly {color} apron"},
+      {"id": "blazer", "pt": "Blazer de uniforme", "en": "a {color} school blazer with an emblem on the chest"},
+      {"id": "varsity", "pt": "Jaqueta college", "en": "a {color} varsity jacket with cream sleeves"},
+      {"id": "fleecejacket", "pt": "Jaqueta de fleece", "en": "a fluffy {color} fleece jacket"},
+      {"id": "haori", "pt": "Haori", "en": "a light {color} haori jacket with a subtle pattern"},
+      {"id": "puffer", "pt": "Jaqueta puffer", "en": "a puffy {color} winter jacket with a fur-trimmed hood down"}
+    ] },
+
+    "bottom": { "pt": "Parte de baixo", "name": "bottom", "props": { "color": { "default": "brown" }, "pattern": {} }, "pieces": [
+      {"id": "pleated", "pt": "Saia plissada", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} pleated skirt"},
+      {"id": "pleatedstripe", "pt": "Saia plissada com listras brancas na barra", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} pleated skirt with two thin white stripes near the hem"},
+      {"id": "aline", "pt": "Saia evasê", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} A-line skirt"},
+      {"id": "suspender", "pt": "Saia com suspensório", "legs": true, "props": { "skirtLength": {} }, "en": "a {skirtLength} {color} {pattern} skirt with thin suspenders"},
+      {"id": "denimskirt", "pt": "Saia jeans", "legs": true, "props": { "skirtLength": {}, "pattern": null }, "en": "a {skirtLength} {color} denim skirt"},
+      {"id": "longskirt", "pt": "Saia longa", "en": "a long flowing {color} {pattern} skirt"},
+      {"id": "tieredskirt", "pt": "Saia longa em camadas", "en": "a long tiered {color} {pattern} skirt"},
+      {"id": "shorts", "pt": "Short largo", "legs": true, "en": "loose {color} {pattern} shorts"},
+      {"id": "culottes", "pt": "Pantacourt", "legs": true, "en": "wide {color} {pattern} culottes that reach below the knee"},
+      {"id": "trousers", "pt": "Calça reta", "en": "straight-leg {color} {pattern} trousers"},
+      {"id": "wideleg", "pt": "Pantalona", "en": "wide-leg {color} {pattern} trousers"},
+      {"id": "cargo", "pt": "Calça cargo", "props": { "pattern": null }, "en": "loose {color} cargo pants"},
+      {"id": "sweatpants", "pt": "Calça de moletom", "props": { "pattern": null }, "en": "soft {color} sweatpants"},
+      {"id": "pajamapants", "pt": "Calça de pijama", "en": "loose {color} {pattern} pajama pants"},
+      {"id": "jeans", "pt": "Calça jeans larga", "props": { "pattern": null }, "en": "loose {color} jeans"},
+      {"id": "overalls", "pt": "Jardineira (calça)", "props": { "pattern": null }, "en": "loose {color} denim overalls"}
+    ] },
+
+    "legs": { "pt": "Meias", "name": "legwear", "pieces": [
+      {"id": "none", "pt": "Nenhuma à mostra", "en": ""},
+      {"id": "thighhigh", "pt": "Meia 7/8 escura", "en": "dark gray thigh-high socks"},
+      {"id": "thighblack", "pt": "Meia 7/8 preta", "en": "black thigh-high socks"},
+      {"id": "thighstripe", "pt": "Meia 7/8 preta com listras brancas no topo", "en": "black thigh-high socks with two thin white stripes around the top"},
+      {"id": "thighwhite", "pt": "Meia 7/8 branca", "en": "white thigh-high socks"},
+      {"id": "tights", "pt": "Meia-calça preta", "en": "black tights"},
+      {"id": "kneewhite", "pt": "Meia branca até o joelho", "en": "white knee-high socks"},
+      {"id": "kneeblack", "pt": "Meia preta até o joelho", "en": "black knee-high socks"},
+      {"id": "striped", "pt": "Meia listrada", "props": { "color": { "default": "@accentColor" } }, "en": "striped knee-high socks in {color} and white"},
+      {"id": "pawsocks", "pt": "Meia com patinhas", "props": { "color": { "default": "@accentColor" } }, "en": "{color} knee-high socks with a small cat-paw print"},
+      {"id": "legwarmers", "pt": "Polainas", "props": { "color": { "default": "beige" } }, "en": "slouchy {color} leg warmers"},
+      {"id": "ankle", "pt": "Meia soquete", "en": "short ankle socks"},
+      {"id": "frilly", "pt": "Soquete com babadinho", "en": "white ankle socks with a little lace frill"}
+    ] },
+
+    "feet": { "pt": "Calçado", "name": "shoes", "props": { "color": { "default": "brown" } }, "pieces": [
+      {"id": "none", "pt": "Não especificar", "props": { "color": null }, "en": ""},
+      {"id": "loafers", "pt": "Mocassim", "en": "{color} loafers"},
+      {"id": "maryjanes", "pt": "Sapato boneca (Mary Jane)", "en": "{color} Mary Jane shoes"},
+      {"id": "platform", "pt": "Sapato boneca de plataforma", "en": "chunky {color} platform Mary Jane shoes"},
+      {"id": "sneakers", "pt": "Tênis", "en": "chunky {color} sneakers"},
+      {"id": "canvas", "pt": "Tênis de lona", "en": "{color} canvas sneakers"},
+      {"id": "ankleboots", "pt": "Bota curta", "en": "{color} ankle boots"},
+      {"id": "rainboots", "pt": "Galocha", "en": "{color} rubber rain boots"},
+      {"id": "slippers", "pt": "Pantufa de gatinho", "en": "fluffy {color} cat-face slippers"},
+      {"id": "sandals", "pt": "Sandália com tira", "en": "{color} strap sandals"},
+      {"id": "uwabaki", "pt": "Sapatilha de escola (uwabaki)", "en": "white indoor school slippers with {color} toes"}
+    ] }
+  }
+}

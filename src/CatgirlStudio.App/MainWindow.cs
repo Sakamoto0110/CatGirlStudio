@@ -1,0 +1,84 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using CatgirlStudio.App.Studio;
+using CatgirlStudio.App.Theme;
+using CatgirlStudio.App.Views;
+
+namespace CatgirlStudio.App;
+
+/// <summary>The workbench: poses | character sheet | prompt | image (API), as four cards.</summary>
+internal sealed class MainWindow : Window
+{
+    readonly Workbench wb;
+
+    // for the --selftest run
+    internal Workbench Bench => wb;
+    internal StudioPanel Studio { get; }
+
+    public MainWindow(Workbench wb, IImageApi api, ImageStore store)
+    {
+        this.wb = wb;
+        Title = "Catgirl Studio" + (api.Fake ? " · modo de teste" : "");
+        Width = 1760;
+        Height = 1000;
+        MinWidth = 1280;
+        MinHeight = 760;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Background = Ui.Res<Brush>("Bg");
+        Foreground = Ui.Res<Brush>("Ink");
+        FontFamily = Ui.Res<FontFamily>("UiFont");
+        FontSize = 13;
+        UseLayoutRounding = true;
+        TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+        Icon = BitmapFrame.Create(new Uri("pack://application:,,,/Resources/neko-purple-light.ico"));
+
+        var top = new DockPanel { Margin = new Thickness(26, 18, 26, 14), LastChildFill = false };
+        var brand = new StackPanel { Orientation = Orientation.Horizontal };
+        brand.Children.Add(new Image { Source = new BitmapImage(new Uri("pack://application:,,,/Resources/neko-purple-light.ico")), Width = 30, Height = 30, Margin = new Thickness(0, 0, 12, 0) });
+        brand.Children.Add(new StackPanel
+        {
+            Children =
+            {
+                Ui.Text("Catgirl Studio", "Title"),
+                Ui.Text("monte a personagem, gere e ajuste a imagem", "Small")
+            }
+        });
+        DockPanel.SetDock(brand, Dock.Left);
+        top.Children.Add(brand);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        actions.Children.Add(Ui.IconTextButton(Ui.IconDice, "Sortear campos", click: (_, _) => wb.RandomizeAll()));
+        actions.Children.Add(Ui.Button("Pose aleatória", click: (_, _) => wb.RandomPose()));
+        actions.Children.Add(Ui.Button("Restaurar padrão", click: (_, _) => Reset()));
+        DockPanel.SetDock(actions, Dock.Right);
+        top.Children.Add(actions);
+
+        var prompt = new PromptPanel(wb);
+        Studio = new StudioPanel(wb, api, store, prompt);
+        var grid = new Grid { Margin = new Thickness(20, 0, 20, 20) };
+        foreach (var w in new[] { new GridLength(280), new GridLength(1, GridUnitType.Star), new GridLength(450), new GridLength(470) })
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = w });
+        var cards = new UIElement[] { new PoseShelf(wb), new CharacterSheet(wb), prompt, Studio };
+        for (var i = 0; i < cards.Length; i++)
+        {
+            var card = Ui.Card(cards[i]);
+            card.Margin = new Thickness(6);
+            Grid.SetColumn(card, i);
+            grid.Children.Add(card);
+        }
+
+        var root = new DockPanel { Background = Ui.Res<Brush>("Bg") };
+        DockPanel.SetDock(top, Dock.Top);
+        root.Children.Add(top);
+        root.Children.Add(grid);
+        Content = root;
+        SourceInitialized += (_, _) => ThemeColors.DarkTitleBar(this);
+    }
+
+    void Reset()
+    {
+        if (MessageBox.Show(this, "Voltar todos os campos ao padrão e destravar tudo?", "Restaurar padrão", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
+            wb.Reset();
+    }
+}

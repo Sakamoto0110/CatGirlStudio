@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Developer tool, not shipped: exports the catalog to JSON, runs the catalog checks and
+    compares the C# prompt engine with the web page's engine.js (run through Jint), option
+    by option, so the app and the page build the same prompts.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jint" Version="4.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CatgirlStudio.Core\CatgirlStudio.Core.csproj" />
+  </ItemGroup>
+
+</Project>

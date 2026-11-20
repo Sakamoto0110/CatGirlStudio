@@ -1,0 +1,440 @@
+{
+  "notes": [
+    "Catgirl Prompt Builder catalog. Read by the web page (engine.js) and by the app (CatgirlStudio.Core).",
+    "A prompt starts from blocks.prompt. {{name}} resolves to: {{pose}} (the prefab's pose), a block, or a variable (the en text of the chosen option, expanded again).",
+    "{{list:a,b,c}} expands each item, drops the empty ones and joins the rest as 'x, y and z'. An item can be an option field ('bottom.socks'). Text that goes into a list has no commas.",
+    "{{var.field}} is another field of the option chosen for var; every option of that var must have the field.",
+    "An option with en '' says nothing, and a joining word before it (and/with/over) goes away with it.",
+    "options can name a shared list ('colors', 'patterns') instead of listing options.",
+    "multi: true -> the value is a list of ids, shown as chips; options with the same slot exclude each other.",
+    "Only the variables a prompt reaches are shown, so a piece or a style can open its own detail fields.",
+    "id is a stable key stored in favorites and image .json files: do not rename one that was used.",
+    "House rules: always an adult cat-girl, cute and cozy, never sensual (modest clothing, high necklines, skirts at the knee or longer)."
+  ],
+  "groups": ["Pose", "Imagem", "Personagem", "Roupa", "Clima e expressão", "Câmera e estilo"],
+  "blocks": {
+    "prompt": "{{format}} {{background}}\n\n{{character}} {{theme}} {{outfitSentence}} {{hairAccessory}} {{accessory}}\n\n{{vibe}} {{modesty}}\n\nFocus: {{focus}}\n\nPose: {{pose}}.\n\nExpression: {{expression}}, {{gaze}}.\n\nCamera: {{camera}}.\n\nStyle: {{style}} Color: {{palette}}.\n\n{{rules}}",
+    "character": "An adult cat-girl with {{hairColor}} hair in {{hairStyle}}, {{eyeColor}} eyes, {{ears}}, and {{tail}}.",
+    "outfitSentence": "She wears {{outfit}}.",
+    "modesty": "Modest, non-revealing clothing: no cleavage, no bare shoulders, no emphasis on the body.",
+    "rules": "Create a completely new, original image; do not reuse or copy any previous image. Clean anatomy with natural hands. No text, no watermark, no signature."
+  },
+  "lists": {
+    "colors": [
+      {"id": "beige", "hex": "#E8D9C0", "pt": "Bege", "en": "beige"},
+      {"id": "cream", "hex": "#F5EFE3", "pt": "Creme", "en": "cream-white"},
+      {"id": "white", "hex": "#FFFFFF", "pt": "Branco", "en": "white"},
+      {"id": "black", "hex": "#1E1E24", "pt": "Preto", "en": "black"},
+      {"id": "charcoal", "hex": "#4A4A52", "pt": "Grafite", "en": "charcoal gray"},
+      {"id": "lightgray", "hex": "#C9C9CF", "pt": "Cinza claro", "en": "light gray"},
+      {"id": "navy", "hex": "#24315E", "pt": "Azul marinho", "en": "navy blue"},
+      {"id": "skyblue", "hex": "#9CC9EB", "pt": "Azul claro", "en": "light sky blue"},
+      {"id": "teal", "hex": "#3A8C8C", "pt": "Verde-azulado", "en": "teal"},
+      {"id": "mint", "hex": "#A8E0C8", "pt": "Menta", "en": "mint green"},
+      {"id": "sage", "hex": "#A3B39A", "pt": "Verde sálvia", "en": "sage green"},
+      {"id": "forest", "hex": "#2F5D46", "pt": "Verde floresta", "en": "forest green"},
+      {"id": "lavender", "hex": "#C8B6E2", "pt": "Lavanda", "en": "lavender"},
+      {"id": "plum", "hex": "#5B2A4E", "pt": "Ameixa", "en": "dark plum"},
+      {"id": "purple", "hex": "#7A4BA3", "pt": "Roxo", "en": "purple"},
+      {"id": "pink", "hex": "#F6C1D3", "pt": "Rosa pastel", "en": "pastel pink"},
+      {"id": "rose", "hex": "#D6A3A8", "pt": "Rosa antigo", "en": "dusty rose"},
+      {"id": "red", "hex": "#C8323C", "pt": "Vermelho", "en": "red"},
+      {"id": "burgundy", "hex": "#7A1F33", "pt": "Bordô", "en": "burgundy"},
+      {"id": "mustard", "hex": "#D9A925", "pt": "Mostarda", "en": "mustard yellow"},
+      {"id": "orange", "hex": "#F4A261", "pt": "Laranja", "en": "soft orange"},
+      {"id": "camel", "hex": "#C19A6B", "pt": "Caramelo", "en": "camel"},
+      {"id": "brown", "hex": "#5C3A21", "pt": "Marrom", "en": "chocolate brown"}
+    ],
+    "patterns": [
+      {"id": "none", "pt": "Lisa", "en": ""},
+      {"id": "stripes", "pt": "Listrada", "en": "striped"},
+      {"id": "polka", "pt": "Bolinhas", "en": "polka-dot"},
+      {"id": "plaid", "pt": "Xadrez", "en": "plaid"},
+      {"id": "gingham", "pt": "Xadrez vichy", "en": "gingham"},
+      {"id": "argyle", "pt": "Losangos (argyle)", "en": "argyle"},
+      {"id": "floral", "pt": "Florzinhas", "en": "small floral-print"},
+      {"id": "hearts", "pt": "Coraçõezinhos", "en": "heart-print"},
+      {"id": "paws", "pt": "Patinhas de gato", "en": "cat-paw-print"},
+      {"id": "stars", "pt": "Estrelinhas", "en": "star-print"}
+    ]
+  },
+  "vars": {
+    "idlePose": { "label": "Variação da pose", "name": "pose", "group": "Pose", "default": "behind",
+      "options": [
+      {"id": "behind", "pt": "Mãos para trás", "en": "standing relaxed with her weight on one leg, both hands loosely clasped behind her back, head tilted slightly"},
+      {"id": "front", "pt": "Mãos juntas na frente", "en": "standing relaxed, both hands lightly holding each other in front of her, shoulders soft"},
+      {"id": "sleeves", "pt": "Mãos escondidas nas mangas", "en": "standing relaxed, both hands hidden inside her long sleeves and held close under her chin"},
+      {"id": "breeze", "pt": "Cabelo ao vento", "en": "standing relaxed in a gentle breeze, her hair and tail drifting to one side, one hand tucking a strand of hair behind her ear"},
+      {"id": "tiptoe", "pt": "Na ponta dos pés, esperando", "en": "standing on tiptoe with her hands clasped behind her back, as if waiting for someone"},
+      {"id": "bag", "pt": "Segurando a alça da bolsa", "en": "standing relaxed, one hand holding the strap of a small shoulder bag, the other hanging loosely at her side"},
+      {"id": "pockets", "pt": "Mãos nos bolsos", "en": "standing relaxed with both hands tucked into her pockets, head tilted to one side"},
+      {"id": "smallwave", "pt": "Aceno tímido", "en": "standing relaxed, giving a small, shy wave with one hand at shoulder height, the other hand at her side"},
+      {"id": "fidget", "pt": "Mexendo na ponta do cabelo", "en": "standing relaxed, twirling the end of a lock of hair around one finger, looking a little shy"}
+    ] },
+
+    "mascotPose": { "label": "Variação da pose", "name": "pose", "group": "Pose", "default": "stand",
+      "options": [
+      {"id": "stand", "pt": "Em pé na barra de tarefas", "en": "standing on the bottom edge of the image as if it were the floor, relaxed, hands clasped behind her back"},
+      {"id": "wave", "pt": "Acenando", "en": "standing on the bottom edge of the image, waving at the viewer with one hand raised"},
+      {"id": "sitedge", "pt": "Sentada na beirada, pernas balançando", "en": "sitting on the bottom edge of the image as if it were a ledge, legs dangling over it, hands resting on the edge beside her"},
+      {"id": "knees", "pt": "Sentada abraçando os joelhos", "en": "sitting on the bottom edge of the image hugging her knees, tail wrapped around her feet"},
+      {"id": "lying", "pt": "Deitada lendo", "en": "lying on her stomach along the bottom edge of the image, chin propped on her hands over an open book, feet kicking lazily in the air behind her"},
+      {"id": "sleep", "pt": "Dormindo enrolada", "en": "curled up asleep on the bottom edge of the image like a cat, head resting on her folded arms, tail wrapped around her"},
+      {"id": "laptop", "pt": "No notebook", "en": "sitting cross-legged on the bottom edge of the image with a small laptop on her lap, typing and glancing at the viewer"},
+      {"id": "hang", "pt": "Pendurada na borda de cima", "en": "hanging by both hands from the top edge of the image, feet dangling, looking down at the viewer with a playful grin"}
+    ] },
+
+    "format": { "label": "Formato", "name": "image format", "group": "Imagem", "default": "portrait",
+      "options": [
+      {"id": "portrait", "pt": "Retrato 2:3 (só a personagem)", "en": "Create a vertical anime illustration, 1024x1536."},
+      {"id": "mascot", "pt": "Mascote de desktop (corpo inteiro)", "en": "Create a vertical anime illustration, 1024x1536, of a desktop mascot: the whole character is in frame from head to toe with nothing cut off, so she can sit on top of a desktop wallpaper."},
+      {"id": "landscape", "pt": "Paisagem 3:2 (wallpaper)", "en": "Create a horizontal anime illustration, 1536x1024, composed as a desktop wallpaper: the character sits in the right third of the frame and the left two-thirds stay calm and mostly empty, with room for desktop icons."},
+      {"id": "square", "pt": "Quadrado 1:1 (avatar)", "en": "Create a square anime illustration, 1024x1024."},
+      {"id": "wide", "pt": "Wallpaper ultrawide 2560×1080", "en": "Create a horizontal anime illustration, 2560x1080 (21:9 ultrawide), composed as a desktop wallpaper: the character sits in the right third of the frame and the left two-thirds stay calm and mostly empty, with room for desktop icons."},
+      {"id": "fhd", "pt": "Wallpaper Full HD 1920×1080", "en": "Create a horizontal anime illustration, 1920x1080 (16:9), composed as a desktop wallpaper: the character sits in the right third of the frame and the left two-thirds stay calm and mostly empty, with room for desktop icons."},
+      {"id": "vertical", "pt": "Wallpaper vertical 1080×1920", "en": "Create a vertical anime illustration, 1080x1920 (9:16), composed as a wallpaper for a vertical monitor: the character is the main subject in the lower two-thirds of the frame and the top stays calm and simple."}
+    ] },
+
+    "background": { "label": "Fundo", "name": "background", "group": "Imagem", "default": "transparent",
+      "options": [
+      {"id": "transparent", "pt": "Transparente (PNG)", "en": "Fully transparent background (PNG), no floor shadow."},
+      {"id": "white", "pt": "Branco liso (fácil de recortar)", "en": "Plain solid white background, no shadow, no other elements."},
+      {"id": "tint", "pt": "Cor suave lisa (tom da cor de destaque)", "en": "Plain soft background in a very light tint of {{accentColor}}, no other elements."},
+      {"id": "bedroom", "pt": "Quarto aconchegante", "en": "Background: a cozy bedroom with fairy lights and plush pillows, {{focus.bg}}."},
+      {"id": "cafe", "pt": "Café com janela chuvosa", "en": "Background: a quiet café by a rainy window, warm lamps inside, {{focus.bg}}."},
+      {"id": "snow", "pt": "Rua com neve à noite", "en": "Background: a snowy street at night with warm shop lights and gently falling snow, {{focus.bg}}."},
+      {"id": "rooftop", "pt": "Telhado ao pôr do sol", "en": "Background: a rooftop at sunset with a distant city skyline, {{focus.bg}}."},
+      {"id": "library", "pt": "Biblioteca", "en": "Background: a warm library with tall wooden bookshelves, {{focus.bg}}."},
+      {"id": "sakura", "pt": "Parque de cerejeiras", "en": "Background: a park with cherry blossom trees and drifting petals, {{focus.bg}}."},
+      {"id": "window", "pt": "Janela com chuva", "en": "Background: a wide window with rain streaks on the glass and a grey-blue city behind it, {{focus.bg}}."},
+      {"id": "classroom", "pt": "Sala de aula à tarde", "en": "Background: a Japanese school classroom in the afternoon, warm sunlight through tall windows and rows of wooden desks, {{focus.bg}}."},
+      {"id": "hallway", "pt": "Corredor da escola", "en": "Background: a bright school hallway with tall windows and shoe lockers, {{focus.bg}}."},
+      {"id": "schoolroof", "pt": "Terraço da escola", "en": "Background: a school rooftop with a tall green wire fence and a clear blue sky with soft clouds, {{focus.bg}}."},
+      {"id": "schoolgate", "pt": "Portão da escola com cerejeiras", "en": "Background: a school gate lined with blooming cherry trees in spring, petals drifting, {{focus.bg}}."}
+    ] },
+
+    "theme": { "label": "Estilo", "name": "style", "group": "Personagem", "default": "none",
+      "options": [
+      {"id": "none", "pt": "Nenhum em especial", "en": ""},
+      {"id": "idol", "pt": "Idol", "en": "Her look is a cute pop idol's: polished, sparkly and cheerful, with {{idolProp}}."},
+      {"id": "nerdy", "pt": "Nerd fofa", "en": "Her look is a cute bookish nerd's: tidy, a little shy and endearing, with {{nerdProp}}."},
+      {"id": "streamer", "pt": "Streamer", "en": "Her look is a cozy streamer's: soft, relaxed and a little playful, with {{streamProp}}."},
+      {"id": "gothic", "pt": "Gótica fofa", "en": "Her look is soft gothic: dark colors, lace and little silver details, sweet rather than scary, with {{gothProp}}."},
+      {"id": "magical", "pt": "Garota mágica", "en": "Her look is a magical girl's: bright, hopeful and sparkly, with {{magicProp}}."},
+      {"id": "sporty", "pt": "Esportiva", "en": "Her look is sporty and full of energy, with {{sportProp}}."},
+      {"id": "pastel", "pt": "Pastel (yume kawaii)", "en": "Her look is dreamy pastel yume-kawaii: soft pastel colors, fluffy textures and little stars and clouds, with {{pastelProp}}."}
+    ] },
+
+    "idolProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "mic",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "mic", "pt": "Microfone com coração", "en": "a small handheld microphone decorated with a heart"},
+      {"id": "headset", "pt": "Microfone de palco (headset)", "en": "a tiny stage headset microphone"},
+      {"id": "lightstick", "pt": "Lightstick de coração", "en": "a glowing heart-shaped lightstick"},
+      {"id": "sparkle", "pt": "Presilhas de estrela e brilhos", "en": "little star-shaped hair clips and soft sparkles in the air around her"}
+    ] },
+
+    "nerdProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "bigglasses",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "bigglasses", "pt": "Óculos redondos grandes", "en": "oversized round glasses slipping slightly down her nose"},
+      {"id": "square", "pt": "Óculos quadrados finos", "en": "thin square glasses"},
+      {"id": "pencil", "pt": "Lápis atrás da orelha", "en": "a pencil tucked behind one ear"}
+    ] },
+
+    "streamProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "headset",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "headset", "pt": "Headset com orelhinhas", "en": "a cat-ear gaming headset with soft {{accentColor}} glowing lights"},
+      {"id": "rgb", "pt": "Luz RGB no rosto", "en": "soft pink and blue RGB light from her setup glowing on her face"},
+      {"id": "controller", "pt": "Controle na mão", "en": "a game controller held loosely in her hands"}
+    ] },
+
+    "gothProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "batclip",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "batclip", "pt": "Presilha de asinha de morcego", "en": "a small bat-wing hairclip"},
+      {"id": "eyeliner", "pt": "Delineado suave", "en": "soft winged eyeliner"},
+      {"id": "parasol", "pt": "Sombrinha de renda", "en": "a small black lace parasol"}
+    ] },
+
+    "magicProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "wand",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "wand", "pt": "Varinha com coração", "en": "a heart-topped magic wand"},
+      {"id": "brooch", "pt": "Broche de estrela brilhando", "en": "a glowing star brooch at her collar"},
+      {"id": "sparkles", "pt": "Brilhinhos flutuando", "en": "tiny sparkles floating around her"}
+    ] },
+
+    "sportProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "band",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "band", "pt": "Faixa na testa", "en": "a soft sweatband on her forehead"},
+      {"id": "towel", "pt": "Toalhinha no pescoço", "en": "a small towel around her neck"},
+      {"id": "bottle", "pt": "Garrafinha na mão", "en": "a water bottle in one hand"}
+    ] },
+
+    "pastelProp": { "label": "Detalhe do estilo", "name": "style detail", "group": "Personagem", "default": "clips",
+      "options": [
+      {"id": "none", "pt": "Nada", "en": ""},
+      {"id": "clips", "pt": "Presilhas de estrela e nuvem", "en": "star and cloud hair clips"},
+      {"id": "wings", "pt": "Asinhas de anjo decorativas", "en": "tiny decorative angel wings on her back"},
+      {"id": "bunny", "pt": "Mochila de coelhinho", "en": "a small plush bunny backpack"}
+    ] },
+
+    "hairColor": { "label": "Cor do cabelo", "name": "hair color", "group": "Personagem", "default": "honey",
+      "options": [
+      {"id": "platinum", "pt": "Loiro platinado", "en": "platinum blonde"},
+      {"id": "honey", "pt": "Loiro mel", "en": "soft honey blonde"},
+      {"id": "golden", "pt": "Loiro dourado", "en": "bright golden blonde"},
+      {"id": "ash", "pt": "Cinza (ash)", "en": "ash gray"},
+      {"id": "silver", "pt": "Prateado", "en": "silver"},
+      {"id": "lavender", "pt": "Lavanda prateado", "en": "lavender-silver"},
+      {"id": "white", "pt": "Branco", "en": "snow white"},
+      {"id": "black", "pt": "Preto", "en": "glossy black"},
+      {"id": "darkbrown", "pt": "Castanho escuro", "en": "dark brown"},
+      {"id": "chestnut", "pt": "Castanho claro", "en": "warm chestnut brown"},
+      {"id": "auburn", "pt": "Ruivo acastanhado", "en": "auburn"},
+      {"id": "ginger", "pt": "Ruivo alaranjado", "en": "ginger orange"},
+      {"id": "pink", "pt": "Rosa pastel", "en": "pastel pink"},
+      {"id": "cherry", "pt": "Rosa cereja", "en": "cherry pink"},
+      {"id": "skyblue", "pt": "Azul claro", "en": "light sky blue"},
+      {"id": "navy", "pt": "Azul marinho", "en": "deep navy blue"},
+      {"id": "mint", "pt": "Verde menta", "en": "mint green"},
+      {"id": "twotone", "pt": "Bicolor preto e branco", "en": "two-tone black and white"}
+    ] },
+
+    "hairStyle": { "label": "Penteado", "name": "hairstyle", "group": "Personagem", "default": "twintails",
+      "options": [
+      {"id": "build", "pt": "Montar por partes", "en": "{{hairShape}}, with {{list:bangs,ahoge,sidelocks,hairDye}}"},
+      {"id": "bob", "pt": "Chanel curto", "en": "a short, soft bob"},
+      {"id": "twintails", "pt": "Maria-chiquinha curta", "en": "short, fluffy twin tails"},
+      {"id": "longtwintails", "pt": "Maria-chiquinha longa", "en": "long twin tails"},
+      {"id": "straight", "pt": "Longo e liso", "en": "a long, straight style"},
+      {"id": "wavy", "pt": "Muito longo e ondulado", "en": "a very long, wavy style"},
+      {"id": "sideponytail", "pt": "Rabo de cavalo baixo de lado", "en": "a low side ponytail"},
+      {"id": "ponytail", "pt": "Rabo de cavalo alto", "en": "a high ponytail"},
+      {"id": "braids", "pt": "Duas tranças soltas", "en": "two loose braids"},
+      {"id": "messy", "pt": "Médio bagunçado", "en": "a messy medium-length style"},
+      {"id": "hime", "pt": "Hime (franja reta)", "en": "a hime cut with straight bangs"},
+      {"id": "halfup", "pt": "Meio preso com coque", "en": "a half-up style with a small bun"},
+      {"id": "wolf", "pt": "Wolf cut", "en": "a fluffy wolf cut"}
+    ] },
+
+    "hairShape": { "label": "Estilo do cabelo", "name": "hair shape", "group": "Personagem", "default": "straight",
+      "options": [
+      {"id": "straight", "pt": "Solto e liso", "en": "a {{hairLength}}, straight style"},
+      {"id": "wavy", "pt": "Solto e ondulado", "en": "a {{hairLength}}, softly wavy style"},
+      {"id": "curly", "pt": "Cacheado", "en": "a {{hairLength}}, bouncy curly style"},
+      {"id": "layered", "pt": "Repicado e volumoso", "en": "a {{hairLength}}, airy layered cut with lots of volume"},
+      {"id": "messy", "pt": "Bagunçado de quem acordou", "en": "a {{hairLength}}, messy just-woke-up style"},
+      {"id": "twintails", "pt": "Maria-chiquinha", "en": "{{hairLength}}, fluffy twin tails"},
+      {"id": "lowtwintails", "pt": "Maria-chiquinha baixa", "en": "{{hairLength}} low twin tails resting on her shoulders"},
+      {"id": "ponytail", "pt": "Rabo de cavalo alto", "en": "a {{hairLength}} high ponytail"},
+      {"id": "sideponytail", "pt": "Rabo de cavalo de lado", "en": "a {{hairLength}} side ponytail"},
+      {"id": "braids", "pt": "Duas tranças", "en": "two {{hairLength}} loose braids"},
+      {"id": "sidebraid", "pt": "Uma trança sobre o ombro", "en": "a {{hairLength}} braid draped over one shoulder"},
+      {"id": "buns", "pt": "Dois coquinhos", "en": "two small buns, with the rest of her {{hairLength}} hair hanging loose"},
+      {"id": "halfup", "pt": "Meio preso com coque", "en": "a {{hairLength}} half-up style with a small bun"},
+      {"id": "hime", "pt": "Hime (corte reto)", "en": "a {{hairLength}} hime cut"},
+      {"id": "wolf", "pt": "Wolf cut", "en": "a {{hairLength}}, fluffy wolf cut"},
+      {"id": "bob", "pt": "Chanel curto", "en": "a short, soft bob"}
+    ] },
+
+    "hairLength": { "label": "Comprimento do cabelo", "name": "hair length", "group": "Personagem", "default": "long",
+      "options": [
+      {"id": "short", "pt": "Curto", "en": "short"},
+      {"id": "shoulder", "pt": "Na altura dos ombros", "en": "shoulder-length"},
+      {"id": "medium", "pt": "Médio", "en": "medium-length"},
+      {"id": "long", "pt": "Longo", "en": "long"},
+      {"id": "verylong", "pt": "Muito longo", "en": "very long"},
+      {"id": "floor", "pt": "Até o chão", "en": "floor-length"}
+    ] },
+
+    "bangs": { "label": "Franja", "name": "bangs", "group": "Personagem", "default": "wispy",
+      "options": [
+      {"id": "notset", "pt": "Não especificar", "en": ""},
+      {"id": "wispy", "pt": "Leve e fiapada", "en": "soft wispy bangs"},
+      {"id": "blunt", "pt": "Reta (cortada)", "en": "blunt straight-cut bangs"},
+      {"id": "side", "pt": "De lado", "en": "side-swept bangs"},
+      {"id": "curtain", "pt": "Repartida no meio (cortina)", "en": "curtain bangs parted in the middle"},
+      {"id": "long", "pt": "Longa, quase nos olhos", "en": "long bangs that brush her eyelashes"},
+      {"id": "nobangs", "pt": "Sem franja (testa à mostra)", "en": "no bangs and her forehead showing"}
+    ] },
+
+    "ahoge": { "label": "Ahoge (fio rebelde)", "name": "ahoge", "group": "Personagem", "default": "none",
+      "options": [
+      {"id": "none", "pt": "Nenhum", "en": ""},
+      {"id": "single", "pt": "Um fio", "en": "a single ahoge sticking up from the top of her head"},
+      {"id": "double", "pt": "Dois, tipo antena", "en": "two ahoge sticking up like little antennae"},
+      {"id": "heart", "pt": "Em forma de coração", "en": "an ahoge curled into a small heart shape"}
+    ] },
+
+    "sidelocks": { "label": "Mechas laterais", "name": "side locks", "group": "Personagem", "default": "none",
+      "options": [
+      {"id": "none", "pt": "Nada de especial", "en": ""},
+      {"id": "long", "pt": "Longas emoldurando o rosto", "en": "long side locks framing her face"},
+      {"id": "braided", "pt": "Uma trancinha fina", "en": "one thin braided side lock"},
+      {"id": "clipped", "pt": "Presas com fita", "en": "side locks tied with small ribbons"}
+    ] },
+
+    "hairDye": { "label": "Detalhe de cor no cabelo", "name": "hair color detail", "group": "Personagem", "default": "none",
+      "options": [
+      {"id": "none", "pt": "Nenhum", "en": ""},
+      {"id": "tips", "pt": "Pontas coloridas", "en": "tips that fade into {{hairDyeColor}}"},
+      {"id": "inner", "pt": "Mecha interna escondida", "en": "a hidden inner layer dyed {{hairDyeColor}}"},
+      {"id": "streak", "pt": "Uma mecha na frente", "en": "a single {{hairDyeColor}} streak near her face"}
+    ] },
+
+    "hairDyeColor": { "label": "Cor do detalhe", "name": "hair detail color", "group": "Personagem", "default": "pink",
+      "options": "colors" },
+
+    "eyeColor": { "label": "Olhos", "name": "eye color", "group": "Personagem", "default": "blue",
+      "options": [
+      {"id": "blue", "pt": "Azul vivo", "en": "big, bright blue"},
+      {"id": "sky", "pt": "Azul céu", "en": "big, pale sky-blue"},
+      {"id": "violet", "pt": "Violeta", "en": "big violet"},
+      {"id": "amethyst", "pt": "Ametista", "en": "big amethyst-purple"},
+      {"id": "emerald", "pt": "Verde esmeralda", "en": "big emerald green"},
+      {"id": "amber", "pt": "Âmbar dourado", "en": "big golden amber"},
+      {"id": "red", "pt": "Vermelho", "en": "big crimson red"},
+      {"id": "pink", "pt": "Rosa", "en": "big soft pink"},
+      {"id": "gray", "pt": "Cinza", "en": "big silver-gray"},
+      {"id": "hetero", "pt": "Heterocromia azul e dourado", "en": "big heterochromatic (one blue, one gold)"}
+    ] },
+
+    "ears": { "label": "Orelhas", "name": "cat ears", "group": "Personagem", "default": "gray",
+      "options": [
+      {"id": "gray", "pt": "Cinza com pelo branco", "en": "fluffy gray cat ears with visible white inner fur"},
+      {"id": "match", "pt": "Da cor do cabelo", "en": "fluffy cat ears matching her hair color, with white inner fur"},
+      {"id": "black", "pt": "Pretas com interior rosado", "en": "black cat ears with soft pink inner ears"},
+      {"id": "white", "pt": "Brancas bem fofas", "en": "very fluffy white cat ears"},
+      {"id": "calico", "pt": "Tricolor (calico)", "en": "calico cat ears with orange, black and white patches"},
+      {"id": "tabby", "pt": "Rajadas (tabby)", "en": "striped tabby cat ears"},
+      {"id": "lynx", "pt": "Pontudas com tufinho", "en": "pointed cat ears with small lynx-like tufts"}
+    ] },
+
+    "tail": { "label": "Cauda", "name": "tail", "group": "Personagem", "default": "thin",
+      "options": [
+      {"id": "thin", "pt": "Fina e lisa", "en": "a thin, smooth tail matching her ears that clearly comes out from her lower back and curves up in a gentle S shape"},
+      {"id": "fluffy", "pt": "Grossa e peluda", "en": "a fluffy tail matching her ears that clearly comes out from her lower back and curls to one side"},
+      {"id": "tabby", "pt": "Rajada", "en": "a striped tabby tail that clearly comes out from her lower back and curves up"},
+      {"id": "bell", "pt": "Com lacinho e sininho", "en": "a thin tail that clearly comes out from her lower back, with a small {{accentColor}} ribbon and a tiny bell near the tip"}
+    ] },
+
+    "accentColor": { "label": "Cor de destaque", "name": "accent color", "group": "Roupa", "default": "teal",
+      "options": "colors" },
+
+    "hairAccessory": { "label": "Acessórios de cabelo", "name": "hair accessories", "group": "Roupa", "default": ["ribbons"], "multi": true,
+      "options": [
+      {"id": "ribbons", "pt": "Lacinhos", "slot": "bows", "en": "Small {{accentColor}} ribbons tie her hair."},
+      {"id": "bigbows", "pt": "Laços grandes", "slot": "bows", "en": "Two large {{accentColor}} bows sit in her hair."},
+      {"id": "xclip", "pt": "Grampo em X", "slot": "bangs", "en": "An X-shaped hairclip holds her bangs."},
+      {"id": "starpins", "pt": "Presilhas de estrelinha", "slot": "bangs", "en": "Two small star-shaped hairpins hold her bangs to one side."},
+      {"id": "flower", "pt": "Grampo de flor", "en": "A small flower hairpin sits above one ear."},
+      {"id": "beret", "pt": "Boina", "slot": "head", "en": "She wears a {{accentColor}} beret tilted between her cat ears."},
+      {"id": "beanie", "pt": "Gorro de tricô com furos para as orelhas", "slot": "head", "en": "She wears a soft {{accentColor}} knit beanie with openings for her cat ears."},
+      {"id": "headband", "pt": "Tiara de laço", "slot": "head", "en": "A {{accentColor}} headband with a small bow sits in front of her cat ears."}
+    ] },
+
+    "accessory": { "label": "Acessórios", "name": "accessories", "group": "Roupa", "default": [], "multi": true,
+      "options": [
+      {"id": "glasses", "pt": "Óculos redondos", "en": "She wears thin round glasses."},
+      {"id": "bell", "pt": "Gargantilha com sininho", "slot": "neck", "en": "A black choker with a small golden bell sits at her neck."},
+      {"id": "choker", "pt": "Gargantilha lisa", "slot": "neck", "en": "A simple black choker sits at her neck."},
+      {"id": "ribbonchoker", "pt": "Gargantilha de fita", "slot": "neck", "en": "A thin {{accentColor}} ribbon choker sits at her neck."},
+      {"id": "scarf", "pt": "Cachecol de tricô", "slot": "neck", "en": "A soft knitted {{accentColor}} scarf is wrapped loosely around her neck."},
+      {"id": "headphones", "pt": "Fone no pescoço", "slot": "neck", "en": "Over-ear headphones rest around her neck."},
+      {"id": "pawgloves", "pt": "Luvinhas de patinha", "slot": "hands", "en": "She wears fluffy cat-paw mittens."},
+      {"id": "mittens", "pt": "Luvas de tricô", "slot": "hands", "en": "She wears fluffy knitted {{accentColor}} mittens."},
+      {"id": "bag", "pt": "Bolsinha de gato", "slot": "bag", "en": "A small cat-shaped shoulder bag hangs at her side."},
+      {"id": "backpack", "pt": "Mochila escolar", "slot": "bag", "en": "A {{accentColor}} school backpack hangs from one shoulder."},
+      {"id": "keychain", "pt": "Bolsa com chaveiro de gatinho", "slot": "bag", "en": "A small school bag with a dangling cat charm hangs from her hand."}
+    ] },
+
+    "vibe": { "label": "Clima", "name": "mood", "group": "Clima e expressão", "default": "cozy",
+      "options": [
+      {"id": "cozy", "pt": "Fofo e aconchegante", "en": "The mood is cute and cozy, not sensual."},
+      {"id": "playful", "pt": "Brincalhão", "en": "The mood is playful and mischievous, like a cat about to knock something off a table, but never sensual."},
+      {"id": "cool", "pt": "Calmo e frio", "en": "The mood is calm, cool and a little aloof, not sensual."},
+      {"id": "sleepy", "pt": "Sonolento", "en": "The mood is sleepy, soft and quiet, not sensual."},
+      {"id": "elegant", "pt": "Elegante", "en": "The mood is elegant and graceful, not sensual."},
+      {"id": "gloomy", "pt": "Gótico suave", "en": "The mood is softly gloomy and gothic-cute, not sensual."},
+      {"id": "energetic", "pt": "Animado", "en": "The mood is bright and energetic, not sensual."}
+    ] },
+
+    "focus": { "label": "Destaque", "name": "focus", "group": "Clima e expressão", "default": "face",
+      "options": [
+      {"id": "face", "pt": "Rosto, cabelo e orelhas", "en": "her face, hair and ears are the center of the image. Draw the hair with soft, airy strands and gentle highlights, the eyes large and expressive, and the ears fluffy and detailed. Draw the clothing as described but render it simply, with little extra detail, so it does not compete with the face.", "bg": "softly blurred and low-detail so the character stands out"},
+      {"id": "balanced", "pt": "Equilibrado", "en": "the whole character reads clearly, with the face as the main point of interest and the outfit in a supporting role.", "bg": "softly blurred and low-detail so the character stands out"},
+      {"id": "outfit", "pt": "Roupa em destaque", "en": "the outfit is shown clearly with nice fabric folds and details, while the face stays expressive and clean.", "bg": "softly blurred and low-detail so the character stands out"},
+      {"id": "scenery", "pt": "Cenário em destaque (fundo nítido)", "en": "the scenery shares the spotlight with her: the place is drawn with care and rich, believable detail, like a background painting from an anime film, and she still reads clearly as the main character, in the same art style as the background.", "bg": "drawn sharp, detailed and fully in focus, with no blur and no depth-of-field effect"}
+    ] },
+
+    "expression": { "label": "Expressão", "name": "expression", "group": "Clima e expressão", "default": "hintsmug",
+      "options": [
+      {"id": "sweet", "pt": "Sorriso doce", "en": "a sweet, gentle closed-mouth smile, soft eyes fully open, light blush"},
+      {"id": "hintsmug", "pt": "Doce com pitada de convencida", "en": "a sweet smile with just a hint of playful smugness (one corner of the mouth slightly raised), eyes fully open and soft, not half-lidded, light blush"},
+      {"id": "smug", "pt": "Convencida (forte)", "en": "a confident, playful smirk with one eyebrow slightly raised, eyes fully open"},
+      {"id": "shy", "pt": "Tímida", "en": "a shy little smile, light blush, eyes slightly averted"},
+      {"id": "happy", "pt": "Feliz, rindo", "en": "a bright, happy laugh with eyes closed in joyful curves and an open smile"},
+      {"id": "surprised", "pt": "Surpresa", "en": "surprised, with a small open \"o\" mouth and wide eyes"},
+      {"id": "pout", "pt": "Emburrada", "en": "a small pout with one cheek slightly puffed, calm eyes"},
+      {"id": "bored", "pt": "Entediada", "en": "bored and unimpressed, mouth in a flat line, eyes calm"},
+      {"id": "sleepy", "pt": "Com sono", "en": "sleepy, with droopy half-closed eyes and a tiny yawn"},
+      {"id": "asleep", "pt": "Dormindo", "en": "peacefully asleep with eyes closed and a relaxed little smile"},
+      {"id": "aloof", "pt": "Fria e distante", "en": "calm and aloof, a neutral closed mouth, a steady gaze and no blush"},
+      {"id": "flustered", "pt": "Envergonhada (muito)", "en": "flustered and embarrassed, strong blush and a wavy, nervous mouth"},
+      {"id": "teary", "pt": "Chorosa", "en": "a teary-eyed pout with glossy eyes"},
+      {"id": "curious", "pt": "Curiosa", "en": "curious, lips slightly parted, wide and attentive eyes"},
+      {"id": "wink", "pt": "Piscadinha", "en": "a playful wink with a small, cheeky smile"},
+      {"id": "determined", "pt": "Determinada", "en": "determined, with a small confident smile and bright eyes"}
+    ] },
+
+    "gaze": { "label": "Olhar", "name": "gaze", "group": "Clima e expressão", "default": "viewer",
+      "options": [
+      {"id": "viewer", "pt": "Para quem vê", "en": "looking at the viewer"},
+      {"id": "upward", "pt": "De baixo para cima, para quem vê", "en": "looking up at the viewer"},
+      {"id": "away", "pt": "Para o lado", "en": "looking away to the side"},
+      {"id": "down", "pt": "Para baixo", "en": "looking down shyly"},
+      {"id": "sky", "pt": "Para o alto", "en": "looking up toward the sky"},
+      {"id": "closed", "pt": "Olhos fechados", "en": "eyes closed"}
+    ] },
+
+    "camera": { "label": "Câmera", "name": "camera and framing", "group": "Câmera e estilo", "default": "closeabove",
+      "options": [
+      {"id": "closeabove", "pt": "Perto, de cima, inclinada no rosto", "en": "close to her, framed from the hips up so her face is large in the frame; the camera is slightly above her eye level, looking gently down at her face, with a subtle tilt toward her face"},
+      {"id": "portrait", "pt": "Close (cabeça e ombros)", "en": "a head-and-shoulders close-up at eye level"},
+      {"id": "waist", "pt": "Da cintura para cima", "en": "framed from the waist up, camera at eye level"},
+      {"id": "knees", "pt": "Dos joelhos para cima", "en": "framed from the knees up, camera at eye level"},
+      {"id": "full", "pt": "Corpo inteiro", "en": "full body in frame with some space around her, camera at eye level"},
+      {"id": "fullabove", "pt": "Corpo inteiro, de cima", "en": "full body in frame, the camera slightly above her and looking down"},
+      {"id": "high", "pt": "Bem de cima", "en": "a high angle from above, looking down at her"},
+      {"id": "chestlow", "pt": "Do peito para cima, de baixo", "en": "framed from the chest up, the camera slightly below her eye level, looking up at her face"},
+      {"id": "dutch", "pt": "Dinâmica (inclinada)", "en": "a dynamic, slightly tilted (dutch) angle, framed from mid-thigh up"},
+      {"id": "selfie", "pt": "Ponto de vista de selfie", "en": "a selfie point of view from her extended arm, slightly above her, with a gentle wide-angle look"}
+    ] },
+
+    "style": { "label": "Traço", "name": "art style", "group": "Câmera e estilo", "default": "ln2010",
+      "options": [
+      {"id": "ln2010", "pt": "Light novel 2010s (sem cara de IA)", "en": "hand-drawn anime illustration look, like a 2010s light novel illustration. Clean thin lineart with slight line-weight variation, soft two-tone cel shading, matte skin with no glossy or plastic shine, slightly desaturated colors, soft airy lighting. Avoid hyper-detailed textures and 3D-like rendering."},
+      {"id": "tvanime", "pt": "Anime de TV (cel moderno)", "en": "modern TV-anime cel shading: crisp lineart, flat colors with a single shadow tone, clean and bright. Matte skin, no glossy shine."},
+      {"id": "watercolor", "pt": "Aquarela suave", "en": "soft watercolor-like anime illustration with gentle color bleeding, a light paper texture and delicate lineart."},
+      {"id": "sketch", "pt": "Rascunho colorido", "en": "loose pencil-sketch anime style with visible construction lines and a light color wash."},
+      {"id": "chibi", "pt": "Chibi", "en": "chibi (super-deformed) style: oversized head, small rounded body, simple shapes and thick soft lineart."},
+      {"id": "keyvisual", "pt": "Key visual polido (mais brilho)", "en": "polished anime key-visual rendering with rich lighting, glossy highlights and detailed shading."}
+    ] },
+
+    "palette": { "label": "Paleta (temperatura de cor)", "name": "color palette", "group": "Câmera e estilo", "default": "pastel",
+      "options": [
+      {"id": "pastel", "pt": "Pastel neutra", "en": "a soft pastel palette with a neutral color temperature"},
+      {"id": "warm", "pt": "Quente (dourado e pêssego)", "en": "a warm color temperature: golden and peach tones in the skin and hair, soft warm light coming from the left"},
+      {"id": "cool", "pt": "Fria (sombras azuladas)", "en": "a cool color temperature: bluish shadows, paler and cooler skin and hair tones, soft blue-white light coming from the left"},
+      {"id": "night", "pt": "Noite", "en": "a night palette: deep blue ambient light with a soft warm rim light along her outline"},
+      {"id": "sunset", "pt": "Pôr do sol", "en": "a sunset palette: an orange-pink glow from one side and long, soft shadows"},
+      {"id": "spring", "pt": "Primavera", "en": "a fresh spring palette of light greens and cherry-blossom pinks"},
+      {"id": "autumn", "pt": "Outono", "en": "an autumn palette of amber, maroon and mustard accents"},
+      {"id": "mono", "pt": "Monocromática + destaque", "en": "a muted monochrome palette with {{accentColor}} as the only accent color"}
+    ] }
+  }
+}

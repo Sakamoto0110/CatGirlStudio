@@ -1,3 +1,12 @@
 # Real-ESRGAN executable and models, downloaded locally (see README)
 tools/bin/
 __pycache__/
+
+# .NET build output and the published exe
+bin/
+obj/
+publish/
+*.user
+
+# Visual Studio cache
+.vs/

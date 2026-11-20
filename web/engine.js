@@ -7,8 +7,9 @@ window.PromptEngine = (function () {
   "use strict";
   const CUSTOM = "__custom";
   const PLACEHOLDER = /\{\{(\w+)\}\}/g;
-  // {{list:a,b,c}} expands each name, drops the empty ones and joins the rest as "x, y and z"
-  const LIST = /\{\{list:(\w+(?:,\w+)*)\}\}/g;
+  // {{list:a,b,c}} expands each name, drops the empty ones and joins the rest as "x, y and z".
+  // An item can also be an option field ("bottom.socks"), so a piece can bring in another one.
+  const LIST = /\{\{list:([\w.]+(?:,[\w.]+)*)\}\}/g;
   // {{var.field}} is another field of the option chosen for var (e.g. {{focus.bg}}), so one
   // choice can steer text elsewhere in the prompt
   const FIELD = /\{\{(\w+)\.(\w+)\}\}/g;
@@ -22,6 +23,8 @@ window.PromptEngine = (function () {
 
   function create(C, PREFABS) {
     const VARS = C.vars;
+    // data/catalog.json lets a variable name a shared list ("colors") instead of listing options
+    for (const def of Object.values(VARS)) if (typeof def.options === "string") def.options = (C.lists || {})[def.options] || [];
     const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
     function findPrefab(id) { return PREFABS.find(p => p.id === id) || PREFABS[0]; }
@@ -143,10 +146,18 @@ window.PromptEngine = (function () {
       const opt = VARS[slot].options.find(o => o.id === a.values[slot]);
       if (!opt || !/\{\{list:/.test(opt.en)) return [slot];
       const parts = [];
-      for (const m of opt.en.matchAll(/\{\{(?:list:)?(\w+(?:,\w+)*)\}\}/g)) {
-        for (const n of m[1].split(",")) if (has(VARS, n)) parts.push(n);
+      for (const m of opt.en.matchAll(/\{\{(?:list:)?([\w.]+(?:,[\w.]+)*)\}\}/g)) {
+        for (const n of m[1].split(",")) {
+          if (has(VARS, n)) { parts.push(n); continue; }
+          // a field item ("bottom.socks" -> "{{legwear}}"): the variables it brings in are parts too
+          const [v, f] = n.split(".");
+          if (!f || !has(VARS, v)) continue;
+          for (const sel of [a, b]) {
+            for (const mm of optionField(v, f, sel).matchAll(/\{\{(\w+)\}\}/g)) if (has(VARS, mm[1])) parts.push(mm[1]);
+          }
+        }
       }
-      return parts.length ? parts : [slot];
+      return parts.length ? [...new Set(parts)] : [slot];
     }
 
     // For a multi-choice slot whose set of choices changed, say what to add and what to take

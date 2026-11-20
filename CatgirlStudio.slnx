@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CatgirlStudio.Core/CatgirlStudio.Core.csproj" />
+    <Project Path="src/CatgirlStudio.App/CatgirlStudio.App.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/CatalogCheck/CatalogCheck.csproj" />
+  </Folder>
+</Solution>

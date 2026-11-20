@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- WPF's text layout needs culture data, so not invariant like the other projects -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <RootNamespace>CatgirlStudio.App</RootNamespace>
+    <AssemblyName>CatgirlStudio</AssemblyName>
+    <!-- LibraryImport (the dark title bar call) generates its marshalling as unsafe code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Icon shown by Explorer and the taskbar for the executable (from vD-Resources: neko-purple-light). -->
+    <ApplicationIcon>Resources\neko-purple-light.ico</ApplicationIcon>
+
+    <!--
+      dotnet publish -c Release  ->  publish\CatgirlStudio.exe, one file. Framework-dependent:
+      it uses the .NET 10 Desktop Runtime already on the machine, so the exe stays small.
+    -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishDir>$(MSBuildThisFileDirectory)..\..\publish\</PublishDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      The catalog ships inside the executable (single-file publish has no loose files).
+    -->
+    <EmbeddedResource Include="..\..\data\catalog.json" LogicalName="CatgirlStudio.catalog.json" />
+    <EmbeddedResource Include="..\..\data\prefabs.json" LogicalName="CatgirlStudio.prefabs.json" />
+    <EmbeddedResource Include="..\..\data\outfits.json" LogicalName="CatgirlStudio.outfits.json" />
+    <!-- window icon, as a WPF resource (pack URI) -->
+    <Resource Include="Resources\neko-purple-light.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CatgirlStudio.Core\CatgirlStudio.Core.csproj" />
+  </ItemGroup>
+
+</Project>

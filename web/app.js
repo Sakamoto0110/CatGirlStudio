@@ -1,10 +1,20 @@
-/* Catgirl Prompt Builder: UI and prompt assembly. Data lives in data/*.js. */
-(function () {
+/* Catgirl Prompt Builder: UI and prompt assembly. Data lives in data/catalog.json and data/prefabs.json. */
+(async function () {
   "use strict";
 
-  const C = window.CATALOG;
-  const PREFABS = window.PREFABS;
-  const CATEGORIES = window.CATEGORIES;
+  let C, P;
+  try {
+    [C, P] = await Promise.all(["data/catalog.json", "data/prefabs.json"].map(async url => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(url + " (" + res.status + ")");
+      return res.json();
+    }));
+  } catch (e) {
+    document.getElementById("status").textContent = "Não consegui carregar o catálogo: " + e.message;
+    return;
+  }
+  const PREFABS = P.prefabs;
+  const CATEGORIES = P.categories;
   const E = window.PromptEngine.create(C, PREFABS);
   const VARS = C.vars;
   const CUSTOM = E.CUSTOM;
@@ -400,4 +410,5 @@
     build: s => build(s || state), editRequest, state, PREFABS, VARS, snapshot, loadSelection, say,
     setBaseline(sel) { state.baseline = normalizeSelection(JSON.parse(JSON.stringify(sel))); renderEdit(); persist(); }
   };
+  window.dispatchEvent(new Event("cpb-ready"));
 })();
