@@ -47,25 +47,23 @@ jobs:
           dotnet publish src/CatgirlStudio.App -c Release --self-contained true -p:Version=$version -o publish/ci/self-contained
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          $packages = @{
-            'CatGirlStudio-win-x64.zip' = 'framework-dependent'
-            'CatGirlStudio-win-x64-self-contained.zip' = 'self-contained'
-          }
-          foreach ($package in $packages.Keys) {
-            $source = "publish/ci/$($packages[$package])"
+          function Write-Package($source, $package) {
             Compress-Archive -Path "$source/*" -DestinationPath "publish/$package"
             $hash = (Get-FileHash -LiteralPath "publish/$package" -Algorithm SHA256).Hash.ToLowerInvariant()
             Set-Content -LiteralPath "publish/$package.sha256" -Value ("$hash  $package" + [char]10) -Encoding ascii -NoNewline
           }
 
+          Write-Package 'publish/ci/framework-dependent' 'CatGirlStudio-win-x64.zip'
+          Write-Package 'publish/ci/self-contained' 'CatGirlStudio-win-x64-self-contained.zip'
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            ./tools/Add-RealEsrgan.ps1 -AppDirectory publish/ci/self-contained
+            Write-Package 'publish/ci/self-contained' 'CatGirlStudio-win-x64-complete.zip'
+          }
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: CatGirlStudio-win-x64
-          path: |
-            publish/CatGirlStudio-win-x64.zip
-            publish/CatGirlStudio-win-x64.zip.sha256
-            publish/CatGirlStudio-win-x64-self-contained.zip
-            publish/CatGirlStudio-win-x64-self-contained.zip.sha256
+          path: publish/CatGirlStudio-win-x64*.zip*
           if-no-files-found: error
           compression-level: 0
 
@@ -83,7 +81,10 @@ jobs:
           name: CatGirlStudio-win-x64
 
       - name: Verify package checksums
-        run: sha256sum --check CatGirlStudio-win-x64.zip.sha256 CatGirlStudio-win-x64-self-contained.zip.sha256
+        run: |
+          sha256sum --check CatGirlStudio-win-x64.zip.sha256 \
+            CatGirlStudio-win-x64-self-contained.zip.sha256 \
+            CatGirlStudio-win-x64-complete.zip.sha256
 
       - name: Publish release
         env:
@@ -99,6 +100,7 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             CatGirlStudio-win-x64.zip CatGirlStudio-win-x64.zip.sha256 \
             CatGirlStudio-win-x64-self-contained.zip CatGirlStudio-win-x64-self-contained.zip.sha256 \
+            CatGirlStudio-win-x64-complete.zip CatGirlStudio-win-x64-complete.zip.sha256 \
             --verify-tag --title "CatGirlStudio $GITHUB_REF_NAME" \
-            --notes 'Choose the self-contained Windows x64 ZIP for a copy that includes the .NET Desktop Runtime. The smaller ZIP uses the installed .NET 10 Desktop Runtime. Extract and run CatgirlStudio.exe. Upscaling uses a separate Real-ESRGAN installation. Launch with --fake to try the app without an API key.' \
+            --notes 'Choose the complete Windows x64 ZIP to get the .NET runtime and local Real-ESRGAN upscaling together. Extract the whole ZIP and run CatgirlStudio.exe. Upscaling requires a Vulkan-capable GPU and driver. Smaller packages are also available. Launch with --fake to try the app without an API key.' \
             --generate-notes "${release_flags[@]}"

@@ -24,6 +24,8 @@ the prompt to OpenAI. Image edits also send the selected source image.
 Published Windows x64 packages are available on [GitHub Releases](https://github.com/Sakamoto0110/CatGirlStudio/releases).
 Extract a ZIP and run `CatgirlStudio.exe`. Each ZIP has a matching SHA-256 file.
 
+- `CatGirlStudio-win-x64-complete.zip` includes the .NET Desktop Runtime and
+  Real-ESRGAN for 2×, 3×, and 4× upscaling. Extract the entire ZIP.
 - `CatGirlStudio-win-x64-self-contained.zip` includes the .NET Desktop Runtime.
 - `CatGirlStudio-win-x64.zip` is smaller and uses the installed .NET 10 Desktop Runtime.
 
@@ -78,7 +80,9 @@ to 2560×1080, 1920×1080, or 1080×1920 on save.
 ## Optional upscaling
 
 The app can upscale PNGs locally by 2×, 3×, or 4× using Real-ESRGAN and its
-`realesr-animevideov3` models. Both app packages use the optional
+`realesr-animevideov3` models. The complete ZIP includes the upscaler in the
+`realesrgan\` folder and its [third-party notices](third-party/realesrgan/NOTICE.md).
+For the smaller app packages, use the optional
 [Real-ESRGAN Windows Vulkan ZIP](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip)
 as a separate download. Extract it into a `realesrgan\` folder beside
 `CatgirlStudio.exe`, with `realesrgan-ncnn-vulkan.exe` and the `models\` folder
@@ -136,9 +140,10 @@ Get-Content (Join-Path $smoke 'report.txt')
 ## Releases
 
 GitHub Actions builds the Windows app and checks the catalogs for pushes to
-`main` and pull requests. A successful run provides both Windows x64 packages.
-Push a version tag such as `v0.1.0-preview.2` to publish both packages and their
-checksums as a GitHub Release. Tags with a suffix create prereleases.
+`main` and pull requests. A successful run provides the two smaller Windows
+x64 packages. Push a version tag such as `v0.1.0-preview.3` to also build the
+complete package and publish all three with their checksums as a GitHub
+Release. Tags with a suffix create prereleases.
 
 The bundled Neko app icon comes from the project's shared vD-Resources asset
-collection. Real-ESRGAN is a separate download.
+collection.
