@@ -30,6 +30,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        System.Diagnostics.Debug.WriteLine("Starting CatGirlStudio.");
         var args = e.Args;
         if (Arg(args, "--data") is { } data) AppPaths.Data = data;
         ThemeColors.Apply(Resources, Arg(args, "--accent"));
